@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/hhatto/gorst"
 )
 
 var format = flag.String("t", "html", "output format")
@@ -27,8 +29,8 @@ func main() {
 		r = f
 	}
 
-	p := gorst.NewParser()
+	p := rst.NewParser(nil)
 	w := bufio.NewWriter(os.Stdout)
-	p.ReSturecturedText(r, gorst.ToHTML(w))
+	p.ReStructuredText(r, rst.ToHTML(w))
 	w.Flush()
 }
