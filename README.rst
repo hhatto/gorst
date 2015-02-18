@@ -30,7 +30,7 @@ Usage
     )
 
     func main() {
-        p := rst.NewParser()
+        p := rst.NewParser(nil)
 
         w := bufio.NewWriter(os.Stdout)
         p.ReStructuredText(os.Stdin, rst.ToHTML(w))

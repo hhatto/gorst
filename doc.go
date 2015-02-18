@@ -1,5 +1,7 @@
+package rst
+
 /*
-A translation of peg-markdown [1] into Go.
+Go implementation of reStructuredText
 
 Usage example:
 
@@ -18,7 +20,4 @@ Usage example:
 		p.ReStructuredText(os.Stdin, rst.ToHTML(w))
 		w.Flush()
 	}
-
-[1]: https://github.com/jgm/peg-markdown/
 */
-package rst
