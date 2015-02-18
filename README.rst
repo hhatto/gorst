@@ -1,11 +1,21 @@
 gorst
 =====
-This is a Go_ implementation of reStructuredText_.
+
+.. image:: https://travis-ci.org/hhatto/gorst.svg?branch=master
+    :target: https://travis-ci.org/hhatto/gorst
+    :alt: Build status
+
+.. image:: https://godoc.org/github.com/hhatto/gorst?status.png
+    :target: http://godoc.org/github.com/hhatto/gorst
+    :alt: GoDoc
+
+This is a Go_ implementation of reStructuredText_. developed on the basis of `Go markdown module implemented by Michael Teichgräber`_ .
 
 Only Support for HTML output is implemented.
 
 .. _reStructuredText: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _Go: http://golang.org/
+.. _`Go markdown module implemented by Michael Teichgräber`: https://github.com/knieriem/markdown
 
 **This is experimental module. Highly under development.**
 
