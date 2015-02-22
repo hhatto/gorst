@@ -189,7 +189,7 @@ Image = NonindentSpace
         }
 
 CodeBlock = NonindentSpace
-            ".. code-block:: " l:Source BlankLine
+            ".. code" "-block"? ":: " l:Source BlankLine
             Newline
             a:StartList
             ( VerbatimChunk { a = cons($$, a) } )+
