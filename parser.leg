@@ -743,7 +743,7 @@ UnquotedLinkSource  = < ( ( !'_' !':' !'`' ( Nonspacechar ) )+ )* >
 RefSource  = < ( ( !'_' !':' !'`' ( ' ' | Nonspacechar ) )+ )* >
           { $$ = p.mkString(yytext) }
 
-QuotedRefSource  = < ( ( !'_' !':' !'`' ( ' ' | Nonspacechar ) )+ )* >
+QuotedRefSource  = < ( ( !':' !'`' ( ' ' | Nonspacechar ) )+ )* >
           { $$ = p.mkString(yytext) }
 
 Label = '[' ( !'^' &{ p.extension.Notes } | &. &{ !p.extension.Notes } )

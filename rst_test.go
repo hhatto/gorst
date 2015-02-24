@@ -78,3 +78,19 @@ hoge2
 		t.Errorf("paragraph error")
 	}
 }
+
+func TestLinkContainsUnderbar(t *testing.T) {
+	const input = "`test - _ -`_\n\n.. _`test - _ -`: http://example.com"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href") {
+		t.Errorf("not find '<a>' string")
+	}
+	if !strings.Contains(output, "</a>") {
+		t.Errorf("not find '</a>' string")
+	}
+
+	if !strings.Contains(output, "test - _ -") {
+		t.Errorf("paragraph error")
+	}
+}
