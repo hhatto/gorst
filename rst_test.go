@@ -94,3 +94,22 @@ func TestLinkContainsUnderbar(t *testing.T) {
 		t.Errorf("paragraph error")
 	}
 }
+
+func TestSimpleLinkRef(t *testing.T) {
+	const input = "BBB_\n\n.. _BBB: http://example.com"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href") {
+		t.Errorf("not find '<a>' string")
+	}
+	if !strings.Contains(output, "</a>") {
+		t.Errorf("not find '</a>' string")
+	}
+
+	if !strings.Contains(output, "BBB") {
+		t.Errorf("paragraph error")
+	}
+	if strings.Contains(output, "BBB_") {
+		t.Errorf("paragraph error")
+	}
+}
