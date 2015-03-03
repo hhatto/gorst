@@ -709,7 +709,7 @@ TitleDouble = '"' < ( !( '"' Sp ( ')' | Newline ) ) . )* > '"'
 
 AutoLink = EmbeddedLink | AutoLinkUrl | AutoLinkEmail
 
-EmbeddedLink = '`' l:Source Sp "<" < [A-Za-z]+ "://" ( !Newline !'>' . )+ > '>' "`_" '_'?
+EmbeddedLink = a:StartList '`' l:EmbeddedRefSource "<" < [A-Za-z]+ "://" ( !Newline !'>' . )+ > ">`_" '_'?
                {
 					$$ = p.mkLink(p.mkString(l.contents.str), yytext, "")
 			   }
@@ -757,6 +757,9 @@ RefSource  = < ( ( !'_' !':' !'`' ( ' ' | Nonspacechar ) )+ )* >
           { $$ = p.mkString(yytext) }
 
 QuotedRefSource  = < ( ( !':' !'`' ( ' ' | Nonspacechar ) )+ )* >
+          { $$ = p.mkString(yytext) }
+
+EmbeddedRefSource  = < ( ( !'<' !':' !'`' ( ' ' | Nonspacechar ) )+ )* >
           { $$ = p.mkString(yytext) }
 
 Label = '[' ( !'^' &{ p.extension.Notes } | &. &{ !p.extension.Notes } )
