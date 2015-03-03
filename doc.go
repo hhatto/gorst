@@ -1,5 +1,3 @@
-package rst
-
 /*
 Go implementation of reStructuredText
 
@@ -21,3 +19,4 @@ Usage example:
 		w.Flush()
 	}
 */
+package rst
