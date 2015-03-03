@@ -12,6 +12,9 @@ hoge1
 
 `Python <http://www.python.org>`_
 
+`Python
+Blank <http://www.python.org>`_
+
 `Python Site <http://www.python.org>`__
 
 https://github.com/

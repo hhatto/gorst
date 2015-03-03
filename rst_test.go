@@ -123,6 +123,15 @@ func TestEmbeddedURI(t *testing.T) {
 	}
 }
 
+func TestEmbeddedURIwithNewline(t *testing.T) {
+	const input = "`hoge\nhoge <http://example.com>`_\n"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href=\"http://example.com\">hoge\nhoge </a>") {
+		t.Errorf("not find '<a>' string")
+	}
+}
+
 func TestEmbeddedAnonymouseURI(t *testing.T) {
 	const input = "`hoge example <http://example.com>`__\n"
 	buf := execFromString(input)
