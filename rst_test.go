@@ -113,3 +113,12 @@ func TestSimpleLinkRef(t *testing.T) {
 		t.Errorf("paragraph error")
 	}
 }
+
+func TestEmbeddedURI(t *testing.T) {
+	const input = "`hoge <http://example.com>`_\n"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href=\"http://example.com\">hoge</a>") {
+		t.Errorf("not find '<a>' string")
+	}
+}

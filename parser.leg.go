@@ -130,8 +130,9 @@ const (
 	ruleImage
 	ruleCodeBlock
 	ruleDoctestBlock
-	ruleBlockQuote
 	ruleBlockQuoteRaw
+	ruleBlockQuoteChunk
+	ruleBlockQuote
 	ruleNonblankIndentedLine
 	ruleVerbatimChunk
 	ruleVerbatim
@@ -298,6 +299,7 @@ const (
 	ruleTitleSingle
 	ruleTitleDouble
 	ruleAutoLink
+	ruleEmbeddedLink
 	ruleAutoLinkUrl
 	ruleAutoLinkEmail
 	ruleReference
@@ -374,7 +376,7 @@ type yyParser struct {
 	state
 	Buffer string
 	Min, Max int
-	rules [249]func() bool
+	rules [251]func() bool
 	commit func(int)bool
 	ResetBuffer	func(string) string
 }
@@ -506,10 +508,10 @@ func (p *yyParser) Init() {
 		},
 		/* 9 Image */
 		func(yytext string, _ int) {
-			l := yyval[yyp-1]
-			a := yyval[yyp-2]
-			t := yyval[yyp-3]
-			g := yyval[yyp-4]
+			a := yyval[yyp-1]
+			t := yyval[yyp-2]
+			g := yyval[yyp-3]
+			l := yyval[yyp-4]
 			
             if match, found := p.findReference(p.mkString(yytext)); found {
                 yy = p.mkLink(p.mkString(yytext), match.url, match.title)
@@ -520,25 +522,25 @@ func (p *yyParser) Init() {
                 yy = result
             }
           
-			yyval[yyp-2] = a
-			yyval[yyp-3] = t
-			yyval[yyp-4] = g
-			yyval[yyp-1] = l
+			yyval[yyp-2] = t
+			yyval[yyp-3] = g
+			yyval[yyp-4] = l
+			yyval[yyp-1] = a
 		},
 		/* 10 Image */
 		func(yytext string, _ int) {
-			l := yyval[yyp-1]
-			a := yyval[yyp-2]
-			t := yyval[yyp-3]
-			g := yyval[yyp-4]
+			g := yyval[yyp-3]
+			l := yyval[yyp-4]
+			a := yyval[yyp-1]
+			t := yyval[yyp-2]
 			
             yy = p.mkLink(p.mkString("a"), l.contents.str, l.contents.str)
             yy.key = IMAGE
         
-			yyval[yyp-1] = l
-			yyval[yyp-2] = a
-			yyval[yyp-3] = t
-			yyval[yyp-4] = g
+			yyval[yyp-1] = a
+			yyval[yyp-2] = t
+			yyval[yyp-3] = g
+			yyval[yyp-4] = l
 		},
 		/* 11 CodeBlock */
 		func(yytext string, _ int) {
@@ -550,8 +552,8 @@ func (p *yyParser) Init() {
 		},
 		/* 12 CodeBlock */
 		func(yytext string, _ int) {
-			a := yyval[yyp-2]
 			l := yyval[yyp-1]
+			a := yyval[yyp-2]
 			
                 yy = p.mkCodeBlock(a, l.contents.str)
             
@@ -578,12 +580,10 @@ func (p *yyParser) Init() {
                
 			yyval[yyp-1] = a
 		},
-		/* 16 BlockQuote */
+		/* 16 BlockQuoteRaw */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
-			  yy = p.mkElem(BLOCKQUOTE)
-                yy.children = a
-             
+			 fmt.Println("bqr") 
 			yyval[yyp-1] = a
 		},
 		/* 17 BlockQuoteRaw */
@@ -595,77 +595,98 @@ func (p *yyParser) Init() {
 		/* 18 BlockQuoteRaw */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
-			 a = cons(yy, a) 
+			
+					fmt.Println("bq")
+					yy = p.mkStringFromList(a, true)
+                    yy.key = RAW
+                
 			yyval[yyp-1] = a
 		},
-		/* 19 BlockQuoteRaw */
+		/* 19 BlockQuoteChunk */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(p.mkString("\n"), a) 
 			yyval[yyp-1] = a
 		},
-		/* 20 BlockQuoteRaw */
-		func(yytext string, _ int) {
-			a := yyval[yyp-1]
-			   yy = p.mkStringFromList(a, true)
-                     yy.key = RAW
-                 
-			yyval[yyp-1] = a
-		},
-		/* 21 VerbatimChunk */
-		func(yytext string, _ int) {
-			a := yyval[yyp-1]
-			 a = cons(p.mkString("\n"), a) 
-			yyval[yyp-1] = a
-		},
-		/* 22 VerbatimChunk */
+		/* 20 BlockQuoteChunk */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 23 VerbatimChunk */
+		/* 21 BlockQuoteChunk */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy = p.mkStringFromList(a, false) 
 			yyval[yyp-1] = a
 		},
-		/* 24 Verbatim */
+		/* 22 BlockQuote */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 25 Verbatim */
+		/* 23 BlockQuote */
+		func(yytext string, _ int) {
+			a := yyval[yyp-1]
+			 yy = p.mkElem(BLOCKQUOTE)
+                 yy.children = a 
+			yyval[yyp-1] = a
+		},
+		/* 24 VerbatimChunk */
+		func(yytext string, _ int) {
+			a := yyval[yyp-1]
+			 a = cons(p.mkString("\n"), a) 
+			yyval[yyp-1] = a
+		},
+		/* 25 VerbatimChunk */
+		func(yytext string, _ int) {
+			a := yyval[yyp-1]
+			 a = cons(yy, a) 
+			yyval[yyp-1] = a
+		},
+		/* 26 VerbatimChunk */
+		func(yytext string, _ int) {
+			a := yyval[yyp-1]
+			 yy = p.mkStringFromList(a, false) 
+			yyval[yyp-1] = a
+		},
+		/* 27 Verbatim */
+		func(yytext string, _ int) {
+			a := yyval[yyp-1]
+			 a = cons(yy, a) 
+			yyval[yyp-1] = a
+		},
+		/* 28 Verbatim */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy = p.mkStringFromList(a, false)
                  yy.key = VERBATIM 
 			yyval[yyp-1] = a
 		},
-		/* 26 HorizontalRule */
+		/* 29 HorizontalRule */
 		func(yytext string, _ int) {
 			 yy = p.mkElem(HRULE) 
 		},
-		/* 27 GridTable */
+		/* 30 GridTable */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy.key = TABLEHEAD; a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 28 GridTable */
+		/* 31 GridTable */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = yy 
 			yyval[yyp-1] = a
 		},
-		/* 29 GridTable */
+		/* 32 GridTable */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 30 GridTable */
+		/* 33 GridTable */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -673,13 +694,13 @@ func (p *yyParser) Init() {
             
 			yyval[yyp-1] = a
 		},
-		/* 31 GridTableHeader */
+		/* 34 GridTableHeader */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 32 GridTableHeader */
+		/* 35 GridTableHeader */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -687,19 +708,19 @@ func (p *yyParser) Init() {
 		
 			yyval[yyp-1] = a
 		},
-		/* 33 GridTableBody */
+		/* 36 GridTableBody */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 34 GridTableBody */
+		/* 37 GridTableBody */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy = p.mkList(TABLEBODY, a);
 			yyval[yyp-1] = a
 		},
-		/* 35 GridTableRow */
+		/* 38 GridTableRow */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -711,7 +732,7 @@ func (p *yyParser) Init() {
 		
 			yyval[yyp-1] = a
 		},
-		/* 36 GridTableRow */
+		/* 39 GridTableRow */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -719,30 +740,30 @@ func (p *yyParser) Init() {
 		
 			yyval[yyp-1] = a
 		},
-		/* 37 TableCell */
+		/* 40 TableCell */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
 			
 			yyval[yyp-1] = a
 		},
-		/* 38 BulletList */
+		/* 41 BulletList */
 		func(yytext string, _ int) {
 			 yy.key = BULLETLIST 
 		},
-		/* 39 ListTight */
+		/* 42 ListTight */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 40 ListTight */
+		/* 43 ListTight */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy = p.mkList(LIST, a) 
 			yyval[yyp-1] = a
 		},
-		/* 41 ListLoose */
+		/* 44 ListLoose */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -754,7 +775,7 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 42 ListLoose */
+		/* 45 ListLoose */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -762,19 +783,19 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 43 ListItem */
+		/* 46 ListItem */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 44 ListItem */
+		/* 47 ListItem */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 45 ListItem */
+		/* 48 ListItem */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -785,19 +806,19 @@ func (p *yyParser) Init() {
             
 			yyval[yyp-1] = a
 		},
-		/* 46 ListItemTight */
+		/* 49 ListItemTight */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 47 ListItemTight */
+		/* 50 ListItemTight */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 48 ListItemTight */
+		/* 51 ListItemTight */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -808,25 +829,25 @@ func (p *yyParser) Init() {
             
 			yyval[yyp-1] = a
 		},
-		/* 49 ListBlock */
+		/* 52 ListBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 50 ListBlock */
+		/* 53 ListBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 51 ListBlock */
+		/* 54 ListBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy = p.mkStringFromList(a, false) 
 			yyval[yyp-1] = a
 		},
-		/* 52 ListContinuationBlock */
+		/* 55 ListContinuationBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			   if len(yytext) == 0 {
@@ -837,23 +858,23 @@ func (p *yyParser) Init() {
                           
 			yyval[yyp-1] = a
 		},
-		/* 53 ListContinuationBlock */
+		/* 56 ListContinuationBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 54 ListContinuationBlock */
+		/* 57 ListContinuationBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			  yy = p.mkStringFromList(a, false) 
 			yyval[yyp-1] = a
 		},
-		/* 55 OrderedList */
+		/* 58 OrderedList */
 		func(yytext string, _ int) {
 			 yy.key = ORDEREDLIST 
 		},
-		/* 56 HtmlBlock */
+		/* 59 HtmlBlock */
 		func(yytext string, _ int) {
 			   if p.extension.FilterHTML {
                     yy = p.mkList(LIST, nil)
@@ -863,7 +884,7 @@ func (p *yyParser) Init() {
                 }
             
 		},
-		/* 57 StyleBlock */
+		/* 60 StyleBlock */
 		func(yytext string, _ int) {
 			   if p.extension.FilterStyles {
                         yy = p.mkList(LIST, nil)
@@ -873,101 +894,101 @@ func (p *yyParser) Init() {
                     }
                 
 		},
-		/* 58 Inlines */
+		/* 61 Inlines */
 		func(yytext string, _ int) {
-			c := yyval[yyp-1]
-			a := yyval[yyp-2]
+			a := yyval[yyp-1]
+			c := yyval[yyp-2]
 			 a = cons(yy, a) 
-			yyval[yyp-2] = a
-			yyval[yyp-1] = c
+			yyval[yyp-1] = a
+			yyval[yyp-2] = c
 		},
-		/* 59 Inlines */
+		/* 62 Inlines */
 		func(yytext string, _ int) {
-			a := yyval[yyp-2]
-			c := yyval[yyp-1]
+			c := yyval[yyp-2]
+			a := yyval[yyp-1]
 			 a = cons(c, a) 
-			yyval[yyp-2] = a
-			yyval[yyp-1] = c
+			yyval[yyp-1] = a
+			yyval[yyp-2] = c
 		},
-		/* 60 Inlines */
+		/* 63 Inlines */
 		func(yytext string, _ int) {
-			a := yyval[yyp-2]
-			c := yyval[yyp-1]
+			a := yyval[yyp-1]
+			c := yyval[yyp-2]
 			
 				yy = p.mkList(LIST, a)
 			
-			yyval[yyp-2] = a
-			yyval[yyp-1] = c
+			yyval[yyp-1] = a
+			yyval[yyp-2] = c
 		},
-		/* 61 Space */
+		/* 64 Space */
 		func(yytext string, _ int) {
 			 yy = p.mkString(" ")
           yy.key = SPACE 
 		},
-		/* 62 Str */
+		/* 65 Str */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(p.mkString(yytext), a) 
 			yyval[yyp-1] = a
 		},
-		/* 63 Str */
+		/* 66 Str */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 64 Str */
+		/* 67 Str */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 if a.next == nil { yy = a; } else { yy = p.mkList(LIST, a) } 
 			yyval[yyp-1] = a
 		},
-		/* 65 StrChunk */
+		/* 68 StrChunk */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 66 AposChunk */
+		/* 69 AposChunk */
 		func(yytext string, _ int) {
 			 yy = p.mkElem(APOSTROPHE) 
 		},
-		/* 67 EscapedChar */
+		/* 70 EscapedChar */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 68 Entity */
+		/* 71 Entity */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext); yy.key = HTML 
 		},
-		/* 69 NormalEndline */
+		/* 72 NormalEndline */
 		func(yytext string, _ int) {
 			 yy = p.mkString("\n")
                     yy.key = SPACE 
 		},
-		/* 70 TerminalEndline */
+		/* 73 TerminalEndline */
 		func(yytext string, _ int) {
 			 yy = nil 
 		},
-		/* 71 LineBreak */
+		/* 74 LineBreak */
 		func(yytext string, _ int) {
 			 yy = p.mkElem(LINEBREAK) 
 		},
-		/* 72 Symbol */
+		/* 75 Symbol */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 73 UlOrStarLine */
+		/* 76 UlOrStarLine */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 74 Emph */
+		/* 77 Emph */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
 			 a = cons(b, a) 
-			yyval[yyp-2] = b
 			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
-		/* 75 Emph */
+		/* 78 Emph */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -975,7 +996,7 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 76 Strong */
+		/* 79 Strong */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -983,31 +1004,31 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 77 Strong */
+		/* 80 Strong */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
 			 yy = p.mkList(STRONG, a) 
+			yyval[yyp-2] = b
+			yyval[yyp-1] = a
+		},
+		/* 81 Strike */
+		func(yytext string, _ int) {
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
+			 a = cons(b, a) 
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 78 Strike */
+		/* 82 Strike */
 		func(yytext string, _ int) {
-			b := yyval[yyp-1]
-			a := yyval[yyp-2]
-			 a = cons(b, a) 
-			yyval[yyp-2] = a
-			yyval[yyp-1] = b
-		},
-		/* 79 Strike */
-		func(yytext string, _ int) {
-			a := yyval[yyp-2]
-			b := yyval[yyp-1]
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 			 yy = p.mkList(STRIKE, a) 
-			yyval[yyp-1] = b
-			yyval[yyp-2] = a
+			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
-		/* 80 UnquotedRefLinkUnderbar */
+		/* 83 UnquotedRefLinkUnderbar */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -1022,7 +1043,7 @@ func (p *yyParser) Init() {
                        
 			yyval[yyp-1] = a
 		},
-		/* 81 QuotedRefLinkUnderbar */
+		/* 84 QuotedRefLinkUnderbar */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -1037,40 +1058,48 @@ func (p *yyParser) Init() {
                        
 			yyval[yyp-1] = a
 		},
-		/* 82 ExplicitLink */
+		/* 85 ExplicitLink */
 		func(yytext string, _ int) {
-			s := yyval[yyp-1]
-			t := yyval[yyp-2]
-			l := yyval[yyp-3]
+			l := yyval[yyp-1]
+			s := yyval[yyp-2]
+			t := yyval[yyp-3]
 			 
                   yy = p.mkLink(l.children, s.contents.str, t.contents.str)
                   s = nil
                   t = nil
                   l = nil
                 
-			yyval[yyp-2] = t
-			yyval[yyp-3] = l
-			yyval[yyp-1] = s
+			yyval[yyp-3] = t
+			yyval[yyp-1] = l
+			yyval[yyp-2] = s
 		},
-		/* 83 Source */
+		/* 86 Source */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 84 Title */
+		/* 87 Title */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 85 AutoLinkUrl */
+		/* 88 EmbeddedLink */
+		func(yytext string, _ int) {
+			l := yyval[yyp-1]
+			
+					yy = p.mkLink(p.mkString(l.contents.str), yytext, "")
+			   
+			yyval[yyp-1] = l
+		},
+		/* 89 AutoLinkUrl */
 		func(yytext string, _ int) {
 			 yy = p.mkLink(p.mkString(yytext), yytext, "") 
 		},
-		/* 86 AutoLinkEmail */
+		/* 90 AutoLinkEmail */
 		func(yytext string, _ int) {
 			
                     yy = p.mkLink(p.mkString(yytext), "mailto:"+yytext, "")
                 
 		},
-		/* 87 QuotedReference */
+		/* 91 QuotedReference */
 		func(yytext string, _ int) {
 			c := yyval[yyp-1]
 			s := yyval[yyp-2]
@@ -1083,7 +1112,7 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = c
 			yyval[yyp-2] = s
 		},
-		/* 88 UnquotedReference */
+		/* 92 UnquotedReference */
 		func(yytext string, _ int) {
 			c := yyval[yyp-1]
 			s := yyval[yyp-2]
@@ -1096,7 +1125,7 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = c
 			yyval[yyp-2] = s
 		},
-		/* 89 UrlReference */
+		/* 93 UrlReference */
 		func(yytext string, _ int) {
 			s := yyval[yyp-1]
 			
@@ -1106,25 +1135,25 @@ func (p *yyParser) Init() {
                 
 			yyval[yyp-1] = s
 		},
-		/* 90 UnquotedLinkSource */
+		/* 94 UnquotedLinkSource */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 91 RefSource */
+		/* 95 RefSource */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 92 QuotedRefSource */
+		/* 96 QuotedRefSource */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 93 Label */
+		/* 97 Label */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 94 Label */
+		/* 98 Label */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -1132,12 +1161,12 @@ func (p *yyParser) Init() {
 		
 			yyval[yyp-1] = a
 		},
-		/* 95 RefSrc */
+		/* 99 RefSrc */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext)
            yy.key = HTML 
 		},
-		/* 96 References */
+		/* 100 References */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -1145,7 +1174,7 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 97 References */
+		/* 101 References */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -1155,11 +1184,11 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 98 Code */
+		/* 102 Code */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext); yy.key = CODE 
 		},
-		/* 99 RawHtml */
+		/* 103 RawHtml */
 		func(yytext string, _ int) {
 			   if p.extension.FilterHTML {
                     yy = p.mkList(LIST, nil)
@@ -1169,35 +1198,35 @@ func (p *yyParser) Init() {
                 }
             
 		},
-		/* 100 StartList */
+		/* 104 StartList */
 		func(yytext string, _ int) {
 			 yy = nil 
 		},
-		/* 101 DoctestLine */
+		/* 105 DoctestLine */
 		func(yytext string, _ int) {
 			 yy = p.mkString(">>> " + yytext) 
 		},
-		/* 102 Line */
+		/* 106 Line */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 103 Apostrophe */
+		/* 107 Apostrophe */
 		func(yytext string, _ int) {
 			 yy = p.mkElem(APOSTROPHE) 
 		},
-		/* 104 Ellipsis */
+		/* 108 Ellipsis */
 		func(yytext string, _ int) {
 			 yy = p.mkElem(ELLIPSIS) 
 		},
-		/* 105 EnDash */
+		/* 109 EnDash */
 		func(yytext string, _ int) {
 			 yy = p.mkElem(ENDASH) 
 		},
-		/* 106 EmDash */
+		/* 110 EmDash */
 		func(yytext string, _ int) {
 			 yy = p.mkElem(EMDASH) 
 		},
-		/* 107 SingleQuoted */
+		/* 111 SingleQuoted */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -1205,7 +1234,7 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 108 SingleQuoted */
+		/* 112 SingleQuoted */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -1213,7 +1242,7 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 109 DoubleQuoted */
+		/* 113 DoubleQuoted */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
@@ -1221,15 +1250,15 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 110 DoubleQuoted */
+		/* 114 DoubleQuoted */
 		func(yytext string, _ int) {
-			a := yyval[yyp-1]
 			b := yyval[yyp-2]
+			a := yyval[yyp-1]
 			 yy = p.mkList(DOUBLEQUOTED, a) 
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
 		},
-		/* 111 NoteReference */
+		/* 115 NoteReference */
 		func(yytext string, _ int) {
 			ref := yyval[yyp-1]
 			
@@ -1244,19 +1273,11 @@ func (p *yyParser) Init() {
                 
 			yyval[yyp-1] = ref
 		},
-		/* 112 RawNoteReference */
+		/* 116 RawNoteReference */
 		func(yytext string, _ int) {
 			 yy = p.mkString(yytext) 
 		},
-		/* 113 Note */
-		func(yytext string, _ int) {
-			ref := yyval[yyp-1]
-			a := yyval[yyp-2]
-			 a = cons(yy, a) 
-			yyval[yyp-2] = a
-			yyval[yyp-1] = ref
-		},
-		/* 114 Note */
+		/* 117 Note */
 		func(yytext string, _ int) {
 			ref := yyval[yyp-1]
 			a := yyval[yyp-2]
@@ -1264,7 +1285,15 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = ref
 			yyval[yyp-2] = a
 		},
-		/* 115 Note */
+		/* 118 Note */
+		func(yytext string, _ int) {
+			ref := yyval[yyp-1]
+			a := yyval[yyp-2]
+			 a = cons(yy, a) 
+			yyval[yyp-1] = ref
+			yyval[yyp-2] = a
+		},
+		/* 119 Note */
 		func(yytext string, _ int) {
 			ref := yyval[yyp-1]
 			a := yyval[yyp-2]
@@ -1274,13 +1303,13 @@ func (p *yyParser) Init() {
 			yyval[yyp-1] = ref
 			yyval[yyp-2] = a
 		},
-		/* 116 Footnote */
+		/* 120 Footnote */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 117 Footnote */
+		/* 121 Footnote */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -1290,35 +1319,35 @@ func (p *yyParser) Init() {
 		
 			yyval[yyp-1] = a
 		},
-		/* 118 Notes */
+		/* 122 Notes */
 		func(yytext string, _ int) {
-			b := yyval[yyp-1]
-			a := yyval[yyp-2]
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 			 a = cons(b, a) 
-			yyval[yyp-2] = a
-			yyval[yyp-1] = b
+			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
-		/* 119 Notes */
+		/* 123 Notes */
 		func(yytext string, _ int) {
-			a := yyval[yyp-2]
-			b := yyval[yyp-1]
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 			 p.notes = reverse(a) 
-			yyval[yyp-2] = a
-			yyval[yyp-1] = b
+			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
-		/* 120 RawNoteBlock */
+		/* 124 RawNoteBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 121 RawNoteBlock */
+		/* 125 RawNoteBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(p.mkString(yytext), a) 
 			yyval[yyp-1] = a
 		},
-		/* 122 RawNoteBlock */
+		/* 126 RawNoteBlock */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			   yy = p.mkStringFromList(a, true)
@@ -1327,25 +1356,25 @@ func (p *yyParser) Init() {
                 
 			yyval[yyp-1] = a
 		},
-		/* 123 DefinitionList */
+		/* 127 DefinitionList */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 124 DefinitionList */
+		/* 128 DefinitionList */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy = p.mkList(DEFINITIONLIST, a) 
 			yyval[yyp-1] = a
 		},
-		/* 125 Definition */
+		/* 129 Definition */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 126 Definition */
+		/* 130 Definition */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			
@@ -1356,19 +1385,19 @@ func (p *yyParser) Init() {
 			
 			yyval[yyp-1] = a
 		},
-		/* 127 Definition */
+		/* 131 Definition */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 yy = p.mkList(LIST, a) 
 			yyval[yyp-1] = a
 		},
-		/* 128 DListTitle */
+		/* 132 DListTitle */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			 a = cons(yy, a) 
 			yyval[yyp-1] = a
 		},
-		/* 129 DListTitle */
+		/* 133 DListTitle */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 				yy = p.mkList(LIST, a)
@@ -1396,7 +1425,7 @@ func (p *yyParser) Init() {
 		},
 	}
 	const (
-		yyPush = 130 + iota
+		yyPush = 134 + iota
 		yyPop
 		yySet
 	)
@@ -1922,7 +1951,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleSource]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -4)
 			if !p.rules[ruleBlankLine]() {
 				goto ko
 			}
@@ -1943,7 +1972,7 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleSource]() {
 						goto nextAlt
 					}
-					doarg(yySet, -2)
+					doarg(yySet, -1)
 					if !p.rules[ruleBlankLine]() {
 						goto nextAlt
 					}
@@ -1962,7 +1991,7 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleSource]() {
 						goto nextAlt5
 					}
-					doarg(yySet, -3)
+					doarg(yySet, -2)
 					do(9)
 					if !p.rules[ruleBlankLine]() {
 						goto nextAlt5
@@ -1982,7 +2011,7 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleSource]() {
 						goto out
 					}
-					doarg(yySet, -4)
+					doarg(yySet, -3)
 					if !p.rules[ruleBlankLine]() {
 						goto out
 					}
@@ -2149,17 +2178,44 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 11 BlockQuote <- (BlockQuoteRaw {  yy = p.mkElem(BLOCKQUOTE)
-                yy.children = a
-             }) */
+		/* 11 BlockQuoteRaw <- (':' BlankLine { fmt.Println("bqr") } Newline StartList (NonblankIndentedLine { a = cons(yy, a) })+ {
+					fmt.Println("bq")
+					yy = p.mkStringFromList(a, true)
+                    yy.key = RAW
+                }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
-			if !p.rules[ruleBlockQuoteRaw]() {
+			if !matchChar(':') {
+				goto ko
+			}
+			if !p.rules[ruleBlankLine]() {
+				goto ko
+			}
+			do(16)
+			if !p.rules[ruleNewline]() {
+				goto ko
+			}
+			if !p.rules[ruleStartList]() {
 				goto ko
 			}
 			doarg(yySet, -1)
-			do(16)
+			if !p.rules[ruleNonblankIndentedLine]() {
+				goto ko
+			}
+			do(17)
+		loop:
+			{
+				position1 := position
+				if !p.rules[ruleNonblankIndentedLine]() {
+					goto out
+				}
+				do(17)
+				goto loop
+			out:
+				position = position1
+			}
+			do(18)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2167,9 +2223,64 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 12 BlockQuoteRaw <- (StartList (('>>>>' { a = cons(yy, a) })+ (!'>' !BlankLine Line { a = cons(yy, a) })* (BlankLine { a = cons(p.mkString("\n"), a) })*)+ {   yy = p.mkStringFromList(a, true)
-                     yy.key = RAW
-                 }) */
+		/* 12 BlockQuoteChunk <- (!'::' ':' BlankLine Newline StartList (BlankLine { a = cons(p.mkString("\n"), a) })* (NonblankIndentedLine { a = cons(yy, a) })+ { yy = p.mkStringFromList(a, false) }) */
+		func() (match bool) {
+			position0, thunkPosition0 := position, thunkPosition
+			doarg(yyPush, 1)
+			if !matchString("::") {
+				goto ok
+			}
+			goto ko
+		ok:
+			if !matchChar(':') {
+				goto ko
+			}
+			if !p.rules[ruleBlankLine]() {
+				goto ko
+			}
+			if !p.rules[ruleNewline]() {
+				goto ko
+			}
+			if !p.rules[ruleStartList]() {
+				goto ko
+			}
+			doarg(yySet, -1)
+		loop:
+			{
+				position1 := position
+				if !p.rules[ruleBlankLine]() {
+					goto out
+				}
+				do(19)
+				goto loop
+			out:
+				position = position1
+			}
+			if !p.rules[ruleNonblankIndentedLine]() {
+				goto ko
+			}
+			do(20)
+		loop4:
+			{
+				position2 := position
+				if !p.rules[ruleNonblankIndentedLine]() {
+					goto out5
+				}
+				do(20)
+				goto loop4
+			out5:
+				position = position2
+			}
+			do(21)
+			doarg(yyPop, 1)
+			match = true
+			return
+		ko:
+			position, thunkPosition = position0, thunkPosition0
+			return
+		},
+		/* 13 BlockQuote <- (StartList (BlockQuoteChunk { a = cons(yy, a) })+ { yy = p.mkElem(BLOCKQUOTE)
+                 yy.children = a }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
@@ -2177,104 +2288,22 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			doarg(yySet, -1)
-			if !matchString(">>>>") {
+			if !p.rules[ruleBlockQuoteChunk]() {
 				goto ko
 			}
-			do(17)
-		loop3:
-			{
-				position1 := position
-				if !matchString(">>>>") {
-					goto out4
-				}
-				do(17)
-				goto loop3
-			out4:
-				position = position1
-			}
-		loop5:
-			{
-				position2, thunkPosition2 := position, thunkPosition
-				if peekChar('>') {
-					goto out6
-				}
-				if !p.rules[ruleBlankLine]() {
-					goto ok
-				}
-				goto out6
-			ok:
-				if !p.rules[ruleLine]() {
-					goto out6
-				}
-				do(18)
-				goto loop5
-			out6:
-				position, thunkPosition = position2, thunkPosition2
-			}
-		loop8:
-			{
-				position3 := position
-				if !p.rules[ruleBlankLine]() {
-					goto out9
-				}
-				do(19)
-				goto loop8
-			out9:
-				position = position3
-			}
+			do(22)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
-				if !matchString(">>>>") {
+				if !p.rules[ruleBlockQuoteChunk]() {
 					goto out
 				}
-				do(17)
-			loop10:
-				{
-					position5 := position
-					if !matchString(">>>>") {
-						goto out11
-					}
-					do(17)
-					goto loop10
-				out11:
-					position = position5
-				}
-			loop12:
-				{
-					position6, thunkPosition6 := position, thunkPosition
-					if peekChar('>') {
-						goto out13
-					}
-					if !p.rules[ruleBlankLine]() {
-						goto ok14
-					}
-					goto out13
-				ok14:
-					if !p.rules[ruleLine]() {
-						goto out13
-					}
-					do(18)
-					goto loop12
-				out13:
-					position, thunkPosition = position6, thunkPosition6
-				}
-			loop15:
-				{
-					position7 := position
-					if !p.rules[ruleBlankLine]() {
-						goto out16
-					}
-					do(19)
-					goto loop15
-				out16:
-					position = position7
-				}
+				do(22)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(20)
+			do(23)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2282,7 +2311,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 13 NonblankIndentedLine <- (!BlankLine IndentedLine) */
+		/* 14 NonblankIndentedLine <- (!BlankLine IndentedLine) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleBlankLine]() {
@@ -2299,7 +2328,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 14 VerbatimChunk <- (StartList (BlankLine { a = cons(p.mkString("\n"), a) })* (NonblankIndentedLine { a = cons(yy, a) })+ { yy = p.mkStringFromList(a, false) }) */
+		/* 15 VerbatimChunk <- (StartList (BlankLine { a = cons(p.mkString("\n"), a) })* (NonblankIndentedLine { a = cons(yy, a) })+ { yy = p.mkStringFromList(a, false) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
@@ -2313,7 +2342,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleBlankLine]() {
 					goto out
 				}
-				do(21)
+				do(24)
 				goto loop
 			out:
 				position = position1
@@ -2321,19 +2350,19 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleNonblankIndentedLine]() {
 				goto ko
 			}
-			do(22)
+			do(25)
 		loop3:
 			{
 				position2 := position
 				if !p.rules[ruleNonblankIndentedLine]() {
 					goto out4
 				}
-				do(22)
+				do(25)
 				goto loop3
 			out4:
 				position = position2
 			}
-			do(23)
+			do(26)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2341,7 +2370,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 15 Verbatim <- (StartList (VerbatimChunk { a = cons(yy, a) })+ { yy = p.mkStringFromList(a, false)
+		/* 16 Verbatim <- (StartList (VerbatimChunk { a = cons(yy, a) })+ { yy = p.mkStringFromList(a, false)
                  yy.key = VERBATIM }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
@@ -2353,19 +2382,19 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleVerbatimChunk]() {
 				goto ko
 			}
-			do(24)
+			do(27)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
 				if !p.rules[ruleVerbatimChunk]() {
 					goto out
 				}
-				do(24)
+				do(27)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(25)
+			do(28)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2373,7 +2402,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 16 HorizontalRule <- (NonindentSpace ((&[_] ('_' Sp '_' Sp '_' (Sp '_')*)) | (&[~] ('~' Sp '~' Sp '~' (Sp '~')*)) | (&[^] ('^' Sp '^' Sp '^' (Sp '^')*)) | (&[*] ('*' Sp '*' Sp '*' (Sp '*')*)) | (&[\-] ('-' Sp '-' Sp '-' (Sp '-')*)) | (&[=] ('=' Sp '=' Sp '=' (Sp '=')*))) Sp Newline BlankLine+ { yy = p.mkElem(HRULE) }) */
+		/* 17 HorizontalRule <- (NonindentSpace ((&[_] ('_' Sp '_' Sp '_' (Sp '_')*)) | (&[~] ('~' Sp '~' Sp '~' (Sp '~')*)) | (&[^] ('^' Sp '^' Sp '^' (Sp '^')*)) | (&[*] ('*' Sp '*' Sp '*' (Sp '*')*)) | (&[\-] ('-' Sp '-' Sp '-' (Sp '-')*)) | (&[=] ('=' Sp '=' Sp '=' (Sp '=')*))) Sp Newline BlankLine+ { yy = p.mkElem(HRULE) }) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleNonindentSpace]() {
@@ -2565,14 +2594,14 @@ func (p *yyParser) Init() {
 			}
 			goto loop14
 		out15:
-			do(26)
+			do(29)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 17 Table <- (GridTable / SimpleTable) */
+		/* 18 Table <- (GridTable / SimpleTable) */
 		func() (match bool) {
 			if !p.rules[ruleGridTable]() {
 				goto nextAlt
@@ -2586,7 +2615,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 18 SimpleTable <- ('NotImplemented' 'simpleTable') */
+		/* 19 SimpleTable <- ('NotImplemented' 'simpleTable') */
 		func() (match bool) {
 			position0 := position
 			if !matchString("NotImplemented") {
@@ -2601,7 +2630,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 19 GridTable <- (StartList (GridTableHeader { yy.key = TABLEHEAD; a = cons(yy, a) }) (GridTableHeaderSep { a = yy }) (GridTableBody { a = cons(yy, a) })+ {
+		/* 20 GridTable <- (StartList (GridTableHeader { yy.key = TABLEHEAD; a = cons(yy, a) }) (GridTableHeaderSep { a = yy }) (GridTableBody { a = cons(yy, a) })+ {
                 yy = p.mkList(TABLE, a)
             }) */
 		func() (match bool) {
@@ -2614,27 +2643,27 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleGridTableHeader]() {
 				goto ko
 			}
-			do(27)
+			do(30)
 			if !p.rules[ruleGridTableHeaderSep]() {
 				goto ko
 			}
-			do(28)
+			do(31)
 			if !p.rules[ruleGridTableBody]() {
 				goto ko
 			}
-			do(29)
+			do(32)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
 				if !p.rules[ruleGridTableBody]() {
 					goto out
 				}
-				do(29)
+				do(32)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(30)
+			do(33)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2642,7 +2671,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 20 GridTableHeader <- (Sp '+' ('-'+ '+')+ BlankLine StartList < (GridTableRow { a = cons(yy, a) })+ > {
+		/* 21 GridTableHeader <- (Sp '+' ('-'+ '+')+ BlankLine StartList < (GridTableRow { a = cons(yy, a) })+ > {
 			yy = p.mkList(TABLEBODY, a)
 		}) */
 		func() (match bool) {
@@ -2696,20 +2725,20 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleGridTableRow]() {
 				goto ko
 			}
-			do(31)
+			do(34)
 		loop7:
 			{
 				position2, thunkPosition2 := position, thunkPosition
 				if !p.rules[ruleGridTableRow]() {
 					goto out8
 				}
-				do(31)
+				do(34)
 				goto loop7
 			out8:
 				position, thunkPosition = position2, thunkPosition2
 			}
 			end = position
-			do(32)
+			do(35)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2717,7 +2746,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 21 GridTableBody <- (StartList (GridTableRow { a = cons(yy, a) } GridTableSep)+ { yy = p.mkList(TABLEBODY, a);}) */
+		/* 22 GridTableBody <- (StartList (GridTableRow { a = cons(yy, a) } GridTableSep)+ { yy = p.mkList(TABLEBODY, a);}) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
@@ -2728,7 +2757,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleGridTableRow]() {
 				goto ko
 			}
-			do(33)
+			do(36)
 			if !p.rules[ruleGridTableSep]() {
 				goto ko
 			}
@@ -2738,7 +2767,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleGridTableRow]() {
 					goto out
 				}
-				do(33)
+				do(36)
 				if !p.rules[ruleGridTableSep]() {
 					goto out
 				}
@@ -2746,7 +2775,7 @@ func (p *yyParser) Init() {
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(34)
+			do(37)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2754,7 +2783,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 22 GridTableRow <- (Sp '|' Sp StartList (< TableCell > Sp '|' {
+		/* 23 GridTableRow <- (Sp '|' Sp StartList (< TableCell > Sp '|' {
 			raw := p.mkString(yytext)
 			raw.key = RAW
 			yy = p.mkElem(TABLECELL)
@@ -2790,7 +2819,7 @@ func (p *yyParser) Init() {
 			if !matchChar('|') {
 				goto ko
 			}
-			do(35)
+			do(38)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -2805,7 +2834,7 @@ func (p *yyParser) Init() {
 				if !matchChar('|') {
 					goto out
 				}
-				do(35)
+				do(38)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -2813,7 +2842,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleBlankLine]() {
 				goto ko
 			}
-			do(36)
+			do(39)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2821,7 +2850,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 23 TableCell <- (StartList (Spacechar / ((&[\t ] Sp) | (&[\\] EscapedChar) | (&[/] '/') | (&[<] '<') | (&[>] '>') | (&[:] ':') | (&[0-9A-Za-z\200-\377] Alphanumeric)))+ {
+		/* 24 TableCell <- (StartList (Spacechar / ((&[\t ] Sp) | (&[\\] EscapedChar) | (&[/] '/') | (&[<] '<') | (&[>] '>') | (&[:] ':') | (&[0-9A-Za-z\200-\377] Alphanumeric)))+ {
 			}) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
@@ -2899,7 +2928,7 @@ func (p *yyParser) Init() {
 		ok6:
 			goto loop
 		out:
-			do(37)
+			do(40)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -2907,7 +2936,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 24 GridTableHeaderSep <- (Sp '+' ('='+ '+')+ BlankLine) */
+		/* 25 GridTableHeaderSep <- (Sp '+' ('='+ '+')+ BlankLine) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleSp]() {
@@ -2956,7 +2985,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 25 GridTableSep <- (Sp '+' ('-'+ '+')+ BlankLine) */
+		/* 26 GridTableSep <- (Sp '+' ('-'+ '+')+ BlankLine) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleSp]() {
@@ -3005,7 +3034,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 26 Bullet <- (!HorizontalRule NonindentSpace ((&[\-] '-') | (&[*] '*') | (&[+] '+')) Spacechar+) */
+		/* 27 Bullet <- (!HorizontalRule NonindentSpace ((&[\-] '-') | (&[*] '*') | (&[+] '+')) Spacechar+) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			if !p.rules[ruleHorizontalRule]() {
@@ -3046,7 +3075,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 27 BulletList <- (&Bullet (ListTight / ListLoose) { yy.key = BULLETLIST }) */
+		/* 28 BulletList <- (&Bullet (ListTight / ListLoose) { yy.key = BULLETLIST }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			{
@@ -3065,14 +3094,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 		ok:
-			do(38)
+			do(41)
 			match = true
 			return
 		ko:
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 28 ListTight <- (StartList (ListItemTight { a = cons(yy, a) })+ BlankLine* !((&[:~] DefMarker) | (&[*+\-] Bullet) | (&[0-9] Enumerator)) { yy = p.mkList(LIST, a) }) */
+		/* 29 ListTight <- (StartList (ListItemTight { a = cons(yy, a) })+ BlankLine* !((&[:~] DefMarker) | (&[*+\-] Bullet) | (&[0-9] Enumerator)) { yy = p.mkList(LIST, a) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
@@ -3083,14 +3112,14 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleListItemTight]() {
 				goto ko
 			}
-			do(39)
+			do(42)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
 				if !p.rules[ruleListItemTight]() {
 					goto out
 				}
-				do(39)
+				do(42)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -3122,7 +3151,7 @@ func (p *yyParser) Init() {
 			}
 			goto ko
 		ok:
-			do(40)
+			do(43)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -3130,7 +3159,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 29 ListLoose <- (StartList (ListItem BlankLine* {
+		/* 30 ListLoose <- (StartList (ListItem BlankLine* {
                   li := b.children
                   li.contents.str += "\n\n"
                   a = cons(b, a)
@@ -3152,7 +3181,7 @@ func (p *yyParser) Init() {
 			}
 			goto loop3
 		out4:
-			do(41)
+			do(44)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -3166,12 +3195,12 @@ func (p *yyParser) Init() {
 				}
 				goto loop5
 			out6:
-				do(41)
+				do(44)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(42)
+			do(45)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -3179,62 +3208,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 30 ListItem <- (((&[:~] DefMarker) | (&[*+\-] Bullet) | (&[0-9] Enumerator)) StartList ListBlock { a = cons(yy, a) } (ListContinuationBlock { a = cons(yy, a) })* {
-               raw := p.mkStringFromList(a, false)
-               raw.key = RAW
-               yy = p.mkElem(LISTITEM)
-               yy.children = raw
-            }) */
-		func() (match bool) {
-			position0, thunkPosition0 := position, thunkPosition
-			doarg(yyPush, 1)
-			{
-				if position == len(p.Buffer) {
-					goto ko
-				}
-				switch p.Buffer[position] {
-				case ':', '~':
-					if !p.rules[ruleDefMarker]() {
-						goto ko
-					}
-				case '*', '+', '-':
-					if !p.rules[ruleBullet]() {
-						goto ko
-					}
-				default:
-					if !p.rules[ruleEnumerator]() {
-						goto ko
-					}
-				}
-			}
-			if !p.rules[ruleStartList]() {
-				goto ko
-			}
-			doarg(yySet, -1)
-			if !p.rules[ruleListBlock]() {
-				goto ko
-			}
-			do(43)
-		loop:
-			{
-				position1, thunkPosition1 := position, thunkPosition
-				if !p.rules[ruleListContinuationBlock]() {
-					goto out
-				}
-				do(44)
-				goto loop
-			out:
-				position, thunkPosition = position1, thunkPosition1
-			}
-			do(45)
-			doarg(yyPop, 1)
-			match = true
-			return
-		ko:
-			position, thunkPosition = position0, thunkPosition0
-			return
-		},
-		/* 31 ListItemTight <- (((&[:~] DefMarker) | (&[*+\-] Bullet) | (&[0-9] Enumerator)) StartList ListBlock { a = cons(yy, a) } (!BlankLine ListContinuationBlock { a = cons(yy, a) })* !ListContinuationBlock {
+		/* 31 ListItem <- (((&[:~] DefMarker) | (&[*+\-] Bullet) | (&[0-9] Enumerator)) StartList ListBlock { a = cons(yy, a) } (ListContinuationBlock { a = cons(yy, a) })* {
                raw := p.mkStringFromList(a, false)
                raw.key = RAW
                yy = p.mkElem(LISTITEM)
@@ -3273,6 +3247,61 @@ func (p *yyParser) Init() {
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
+				if !p.rules[ruleListContinuationBlock]() {
+					goto out
+				}
+				do(47)
+				goto loop
+			out:
+				position, thunkPosition = position1, thunkPosition1
+			}
+			do(48)
+			doarg(yyPop, 1)
+			match = true
+			return
+		ko:
+			position, thunkPosition = position0, thunkPosition0
+			return
+		},
+		/* 32 ListItemTight <- (((&[:~] DefMarker) | (&[*+\-] Bullet) | (&[0-9] Enumerator)) StartList ListBlock { a = cons(yy, a) } (!BlankLine ListContinuationBlock { a = cons(yy, a) })* !ListContinuationBlock {
+               raw := p.mkStringFromList(a, false)
+               raw.key = RAW
+               yy = p.mkElem(LISTITEM)
+               yy.children = raw
+            }) */
+		func() (match bool) {
+			position0, thunkPosition0 := position, thunkPosition
+			doarg(yyPush, 1)
+			{
+				if position == len(p.Buffer) {
+					goto ko
+				}
+				switch p.Buffer[position] {
+				case ':', '~':
+					if !p.rules[ruleDefMarker]() {
+						goto ko
+					}
+				case '*', '+', '-':
+					if !p.rules[ruleBullet]() {
+						goto ko
+					}
+				default:
+					if !p.rules[ruleEnumerator]() {
+						goto ko
+					}
+				}
+			}
+			if !p.rules[ruleStartList]() {
+				goto ko
+			}
+			doarg(yySet, -1)
+			if !p.rules[ruleListBlock]() {
+				goto ko
+			}
+			do(49)
+		loop:
+			{
+				position1, thunkPosition1 := position, thunkPosition
 				if !p.rules[ruleBlankLine]() {
 					goto ok4
 				}
@@ -3281,7 +3310,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleListContinuationBlock]() {
 					goto out
 				}
-				do(47)
+				do(50)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -3291,7 +3320,7 @@ func (p *yyParser) Init() {
 			}
 			goto ko
 		ok5:
-			do(48)
+			do(51)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -3299,7 +3328,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 32 ListBlock <- (StartList !BlankLine Line { a = cons(yy, a) } (ListBlockLine { a = cons(yy, a) })* { yy = p.mkStringFromList(a, false) }) */
+		/* 33 ListBlock <- (StartList !BlankLine Line { a = cons(yy, a) } (ListBlockLine { a = cons(yy, a) })* { yy = p.mkStringFromList(a, false) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
@@ -3315,19 +3344,19 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleLine]() {
 				goto ko
 			}
-			do(49)
+			do(52)
 		loop:
 			{
 				position1 := position
 				if !p.rules[ruleListBlockLine]() {
 					goto out
 				}
-				do(50)
+				do(53)
 				goto loop
 			out:
 				position = position1
 			}
-			do(51)
+			do(54)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -3335,7 +3364,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 33 ListContinuationBlock <- (StartList (< BlankLine* > {   if len(yytext) == 0 {
+		/* 34 ListContinuationBlock <- (StartList (< BlankLine* > {   if len(yytext) == 0 {
                                    a = cons(p.mkString("\001"), a) // block separator
                               } else {
                                    a = cons(p.mkString(yytext), a)
@@ -3356,14 +3385,14 @@ func (p *yyParser) Init() {
 			goto loop
 		out:
 			end = position
-			do(52)
+			do(55)
 			if !p.rules[ruleIndent]() {
 				goto ko
 			}
 			if !p.rules[ruleListBlock]() {
 				goto ko
 			}
-			do(53)
+			do(56)
 		loop3:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -3373,12 +3402,12 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleListBlock]() {
 					goto out4
 				}
-				do(53)
+				do(56)
 				goto loop3
 			out4:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(54)
+			do(57)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -3386,7 +3415,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 34 Enumerator <- (NonindentSpace [0-9]+ '.' Spacechar+) */
+		/* 35 Enumerator <- (NonindentSpace [0-9]+ '.' Spacechar+) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleNonindentSpace]() {
@@ -3419,7 +3448,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 35 OrderedList <- (&Enumerator (ListTight / ListLoose) { yy.key = ORDEREDLIST }) */
+		/* 36 OrderedList <- (&Enumerator (ListTight / ListLoose) { yy.key = ORDEREDLIST }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			{
@@ -3438,14 +3467,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 		ok:
-			do(55)
+			do(58)
 			match = true
 			return
 		ko:
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 36 ListBlockLine <- (!BlankLine !((&[:~] DefMarker) | (&[\t *+\-0-9] (Indent? ((&[*+\-] Bullet) | (&[0-9] Enumerator))))) !HorizontalRule OptionallyIndentedLine) */
+		/* 37 ListBlockLine <- (!BlankLine !((&[:~] DefMarker) | (&[\t *+\-0-9] (Indent? ((&[*+\-] Bullet) | (&[0-9] Enumerator))))) !HorizontalRule OptionallyIndentedLine) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			if !p.rules[ruleBlankLine]() {
@@ -3504,7 +3533,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 37 HtmlBlockOpenAddress <- ('<' Spnl ((&[A] 'ADDRESS') | (&[a] 'address')) Spnl HtmlAttribute* '>') */
+		/* 38 HtmlBlockOpenAddress <- ('<' Spnl ((&[A] 'ADDRESS') | (&[a] 'address')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3550,7 +3579,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 38 HtmlBlockCloseAddress <- ('<' Spnl '/' ((&[A] 'ADDRESS') | (&[a] 'address')) Spnl '>') */
+		/* 39 HtmlBlockCloseAddress <- ('<' Spnl '/' ((&[A] 'ADDRESS') | (&[a] 'address')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3593,7 +3622,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 39 HtmlBlockAddress <- (HtmlBlockOpenAddress (HtmlBlockAddress / (!HtmlBlockCloseAddress .))* HtmlBlockCloseAddress) */
+		/* 40 HtmlBlockAddress <- (HtmlBlockOpenAddress (HtmlBlockAddress / (!HtmlBlockCloseAddress .))* HtmlBlockCloseAddress) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenAddress]() {
@@ -3629,7 +3658,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 40 HtmlBlockOpenBlockquote <- ('<' Spnl ((&[B] 'BLOCKQUOTE') | (&[b] 'blockquote')) Spnl HtmlAttribute* '>') */
+		/* 41 HtmlBlockOpenBlockquote <- ('<' Spnl ((&[B] 'BLOCKQUOTE') | (&[b] 'blockquote')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3675,7 +3704,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 41 HtmlBlockCloseBlockquote <- ('<' Spnl '/' ((&[B] 'BLOCKQUOTE') | (&[b] 'blockquote')) Spnl '>') */
+		/* 42 HtmlBlockCloseBlockquote <- ('<' Spnl '/' ((&[B] 'BLOCKQUOTE') | (&[b] 'blockquote')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3718,7 +3747,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 42 HtmlBlockBlockquote <- (HtmlBlockOpenBlockquote (HtmlBlockBlockquote / (!HtmlBlockCloseBlockquote .))* HtmlBlockCloseBlockquote) */
+		/* 43 HtmlBlockBlockquote <- (HtmlBlockOpenBlockquote (HtmlBlockBlockquote / (!HtmlBlockCloseBlockquote .))* HtmlBlockCloseBlockquote) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenBlockquote]() {
@@ -3754,7 +3783,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 43 HtmlBlockOpenCenter <- ('<' Spnl ((&[C] 'CENTER') | (&[c] 'center')) Spnl HtmlAttribute* '>') */
+		/* 44 HtmlBlockOpenCenter <- ('<' Spnl ((&[C] 'CENTER') | (&[c] 'center')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3800,7 +3829,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 44 HtmlBlockCloseCenter <- ('<' Spnl '/' ((&[C] 'CENTER') | (&[c] 'center')) Spnl '>') */
+		/* 45 HtmlBlockCloseCenter <- ('<' Spnl '/' ((&[C] 'CENTER') | (&[c] 'center')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3843,7 +3872,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 45 HtmlBlockCenter <- (HtmlBlockOpenCenter (HtmlBlockCenter / (!HtmlBlockCloseCenter .))* HtmlBlockCloseCenter) */
+		/* 46 HtmlBlockCenter <- (HtmlBlockOpenCenter (HtmlBlockCenter / (!HtmlBlockCloseCenter .))* HtmlBlockCloseCenter) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenCenter]() {
@@ -3879,7 +3908,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 46 HtmlBlockOpenDir <- ('<' Spnl ((&[D] 'DIR') | (&[d] 'dir')) Spnl HtmlAttribute* '>') */
+		/* 47 HtmlBlockOpenDir <- ('<' Spnl ((&[D] 'DIR') | (&[d] 'dir')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3925,7 +3954,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 47 HtmlBlockCloseDir <- ('<' Spnl '/' ((&[D] 'DIR') | (&[d] 'dir')) Spnl '>') */
+		/* 48 HtmlBlockCloseDir <- ('<' Spnl '/' ((&[D] 'DIR') | (&[d] 'dir')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -3968,7 +3997,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 48 HtmlBlockDir <- (HtmlBlockOpenDir (HtmlBlockDir / (!HtmlBlockCloseDir .))* HtmlBlockCloseDir) */
+		/* 49 HtmlBlockDir <- (HtmlBlockOpenDir (HtmlBlockDir / (!HtmlBlockCloseDir .))* HtmlBlockCloseDir) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenDir]() {
@@ -4004,7 +4033,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 49 HtmlBlockOpenDiv <- ('<' Spnl ((&[D] 'DIV') | (&[d] 'div')) Spnl HtmlAttribute* '>') */
+		/* 50 HtmlBlockOpenDiv <- ('<' Spnl ((&[D] 'DIV') | (&[d] 'div')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4050,7 +4079,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 50 HtmlBlockCloseDiv <- ('<' Spnl '/' ((&[D] 'DIV') | (&[d] 'div')) Spnl '>') */
+		/* 51 HtmlBlockCloseDiv <- ('<' Spnl '/' ((&[D] 'DIV') | (&[d] 'div')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4093,7 +4122,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 51 HtmlBlockDiv <- (HtmlBlockOpenDiv (HtmlBlockDiv / (!HtmlBlockCloseDiv .))* HtmlBlockCloseDiv) */
+		/* 52 HtmlBlockDiv <- (HtmlBlockOpenDiv (HtmlBlockDiv / (!HtmlBlockCloseDiv .))* HtmlBlockCloseDiv) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenDiv]() {
@@ -4129,7 +4158,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 52 HtmlBlockOpenDl <- ('<' Spnl ((&[D] 'DL') | (&[d] 'dl')) Spnl HtmlAttribute* '>') */
+		/* 53 HtmlBlockOpenDl <- ('<' Spnl ((&[D] 'DL') | (&[d] 'dl')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4175,7 +4204,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 53 HtmlBlockCloseDl <- ('<' Spnl '/' ((&[D] 'DL') | (&[d] 'dl')) Spnl '>') */
+		/* 54 HtmlBlockCloseDl <- ('<' Spnl '/' ((&[D] 'DL') | (&[d] 'dl')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4218,7 +4247,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 54 HtmlBlockDl <- (HtmlBlockOpenDl (HtmlBlockDl / (!HtmlBlockCloseDl .))* HtmlBlockCloseDl) */
+		/* 55 HtmlBlockDl <- (HtmlBlockOpenDl (HtmlBlockDl / (!HtmlBlockCloseDl .))* HtmlBlockCloseDl) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenDl]() {
@@ -4254,7 +4283,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 55 HtmlBlockOpenFieldset <- ('<' Spnl ((&[F] 'FIELDSET') | (&[f] 'fieldset')) Spnl HtmlAttribute* '>') */
+		/* 56 HtmlBlockOpenFieldset <- ('<' Spnl ((&[F] 'FIELDSET') | (&[f] 'fieldset')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4300,7 +4329,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 56 HtmlBlockCloseFieldset <- ('<' Spnl '/' ((&[F] 'FIELDSET') | (&[f] 'fieldset')) Spnl '>') */
+		/* 57 HtmlBlockCloseFieldset <- ('<' Spnl '/' ((&[F] 'FIELDSET') | (&[f] 'fieldset')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4343,7 +4372,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 57 HtmlBlockFieldset <- (HtmlBlockOpenFieldset (HtmlBlockFieldset / (!HtmlBlockCloseFieldset .))* HtmlBlockCloseFieldset) */
+		/* 58 HtmlBlockFieldset <- (HtmlBlockOpenFieldset (HtmlBlockFieldset / (!HtmlBlockCloseFieldset .))* HtmlBlockCloseFieldset) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenFieldset]() {
@@ -4379,7 +4408,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 58 HtmlBlockOpenForm <- ('<' Spnl ((&[F] 'FORM') | (&[f] 'form')) Spnl HtmlAttribute* '>') */
+		/* 59 HtmlBlockOpenForm <- ('<' Spnl ((&[F] 'FORM') | (&[f] 'form')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4425,7 +4454,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 59 HtmlBlockCloseForm <- ('<' Spnl '/' ((&[F] 'FORM') | (&[f] 'form')) Spnl '>') */
+		/* 60 HtmlBlockCloseForm <- ('<' Spnl '/' ((&[F] 'FORM') | (&[f] 'form')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4468,7 +4497,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 60 HtmlBlockForm <- (HtmlBlockOpenForm (HtmlBlockForm / (!HtmlBlockCloseForm .))* HtmlBlockCloseForm) */
+		/* 61 HtmlBlockForm <- (HtmlBlockOpenForm (HtmlBlockForm / (!HtmlBlockCloseForm .))* HtmlBlockCloseForm) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenForm]() {
@@ -4504,7 +4533,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 61 HtmlBlockOpenH1 <- ('<' Spnl ((&[H] 'H1') | (&[h] 'h1')) Spnl HtmlAttribute* '>') */
+		/* 62 HtmlBlockOpenH1 <- ('<' Spnl ((&[H] 'H1') | (&[h] 'h1')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4550,7 +4579,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 62 HtmlBlockCloseH1 <- ('<' Spnl '/' ((&[H] 'H1') | (&[h] 'h1')) Spnl '>') */
+		/* 63 HtmlBlockCloseH1 <- ('<' Spnl '/' ((&[H] 'H1') | (&[h] 'h1')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4593,7 +4622,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 63 HtmlBlockH1 <- (HtmlBlockOpenH1 (HtmlBlockH1 / (!HtmlBlockCloseH1 .))* HtmlBlockCloseH1) */
+		/* 64 HtmlBlockH1 <- (HtmlBlockOpenH1 (HtmlBlockH1 / (!HtmlBlockCloseH1 .))* HtmlBlockCloseH1) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenH1]() {
@@ -4629,7 +4658,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 64 HtmlBlockOpenH2 <- ('<' Spnl ((&[H] 'H2') | (&[h] 'h2')) Spnl HtmlAttribute* '>') */
+		/* 65 HtmlBlockOpenH2 <- ('<' Spnl ((&[H] 'H2') | (&[h] 'h2')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4675,7 +4704,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 65 HtmlBlockCloseH2 <- ('<' Spnl '/' ((&[H] 'H2') | (&[h] 'h2')) Spnl '>') */
+		/* 66 HtmlBlockCloseH2 <- ('<' Spnl '/' ((&[H] 'H2') | (&[h] 'h2')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4718,7 +4747,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 66 HtmlBlockH2 <- (HtmlBlockOpenH2 (HtmlBlockH2 / (!HtmlBlockCloseH2 .))* HtmlBlockCloseH2) */
+		/* 67 HtmlBlockH2 <- (HtmlBlockOpenH2 (HtmlBlockH2 / (!HtmlBlockCloseH2 .))* HtmlBlockCloseH2) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenH2]() {
@@ -4754,7 +4783,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 67 HtmlBlockOpenH3 <- ('<' Spnl ((&[H] 'H3') | (&[h] 'h3')) Spnl HtmlAttribute* '>') */
+		/* 68 HtmlBlockOpenH3 <- ('<' Spnl ((&[H] 'H3') | (&[h] 'h3')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4800,7 +4829,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 68 HtmlBlockCloseH3 <- ('<' Spnl '/' ((&[H] 'H3') | (&[h] 'h3')) Spnl '>') */
+		/* 69 HtmlBlockCloseH3 <- ('<' Spnl '/' ((&[H] 'H3') | (&[h] 'h3')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4843,7 +4872,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 69 HtmlBlockH3 <- (HtmlBlockOpenH3 (HtmlBlockH3 / (!HtmlBlockCloseH3 .))* HtmlBlockCloseH3) */
+		/* 70 HtmlBlockH3 <- (HtmlBlockOpenH3 (HtmlBlockH3 / (!HtmlBlockCloseH3 .))* HtmlBlockCloseH3) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenH3]() {
@@ -4879,7 +4908,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 70 HtmlBlockOpenH4 <- ('<' Spnl ((&[H] 'H4') | (&[h] 'h4')) Spnl HtmlAttribute* '>') */
+		/* 71 HtmlBlockOpenH4 <- ('<' Spnl ((&[H] 'H4') | (&[h] 'h4')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4925,7 +4954,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 71 HtmlBlockCloseH4 <- ('<' Spnl '/' ((&[H] 'H4') | (&[h] 'h4')) Spnl '>') */
+		/* 72 HtmlBlockCloseH4 <- ('<' Spnl '/' ((&[H] 'H4') | (&[h] 'h4')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -4968,7 +4997,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 72 HtmlBlockH4 <- (HtmlBlockOpenH4 (HtmlBlockH4 / (!HtmlBlockCloseH4 .))* HtmlBlockCloseH4) */
+		/* 73 HtmlBlockH4 <- (HtmlBlockOpenH4 (HtmlBlockH4 / (!HtmlBlockCloseH4 .))* HtmlBlockCloseH4) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenH4]() {
@@ -5004,7 +5033,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 73 HtmlBlockOpenH5 <- ('<' Spnl ((&[H] 'H5') | (&[h] 'h5')) Spnl HtmlAttribute* '>') */
+		/* 74 HtmlBlockOpenH5 <- ('<' Spnl ((&[H] 'H5') | (&[h] 'h5')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5050,7 +5079,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 74 HtmlBlockCloseH5 <- ('<' Spnl '/' ((&[H] 'H5') | (&[h] 'h5')) Spnl '>') */
+		/* 75 HtmlBlockCloseH5 <- ('<' Spnl '/' ((&[H] 'H5') | (&[h] 'h5')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5093,7 +5122,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 75 HtmlBlockH5 <- (HtmlBlockOpenH5 (HtmlBlockH5 / (!HtmlBlockCloseH5 .))* HtmlBlockCloseH5) */
+		/* 76 HtmlBlockH5 <- (HtmlBlockOpenH5 (HtmlBlockH5 / (!HtmlBlockCloseH5 .))* HtmlBlockCloseH5) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenH5]() {
@@ -5129,7 +5158,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 76 HtmlBlockOpenH6 <- ('<' Spnl ((&[H] 'H6') | (&[h] 'h6')) Spnl HtmlAttribute* '>') */
+		/* 77 HtmlBlockOpenH6 <- ('<' Spnl ((&[H] 'H6') | (&[h] 'h6')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5175,7 +5204,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 77 HtmlBlockCloseH6 <- ('<' Spnl '/' ((&[H] 'H6') | (&[h] 'h6')) Spnl '>') */
+		/* 78 HtmlBlockCloseH6 <- ('<' Spnl '/' ((&[H] 'H6') | (&[h] 'h6')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5218,7 +5247,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 78 HtmlBlockH6 <- (HtmlBlockOpenH6 (HtmlBlockH6 / (!HtmlBlockCloseH6 .))* HtmlBlockCloseH6) */
+		/* 79 HtmlBlockH6 <- (HtmlBlockOpenH6 (HtmlBlockH6 / (!HtmlBlockCloseH6 .))* HtmlBlockCloseH6) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenH6]() {
@@ -5254,7 +5283,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 79 HtmlBlockOpenMenu <- ('<' Spnl ((&[M] 'MENU') | (&[m] 'menu')) Spnl HtmlAttribute* '>') */
+		/* 80 HtmlBlockOpenMenu <- ('<' Spnl ((&[M] 'MENU') | (&[m] 'menu')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5300,7 +5329,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 80 HtmlBlockCloseMenu <- ('<' Spnl '/' ((&[M] 'MENU') | (&[m] 'menu')) Spnl '>') */
+		/* 81 HtmlBlockCloseMenu <- ('<' Spnl '/' ((&[M] 'MENU') | (&[m] 'menu')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5343,7 +5372,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 81 HtmlBlockMenu <- (HtmlBlockOpenMenu (HtmlBlockMenu / (!HtmlBlockCloseMenu .))* HtmlBlockCloseMenu) */
+		/* 82 HtmlBlockMenu <- (HtmlBlockOpenMenu (HtmlBlockMenu / (!HtmlBlockCloseMenu .))* HtmlBlockCloseMenu) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenMenu]() {
@@ -5379,7 +5408,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 82 HtmlBlockOpenNoframes <- ('<' Spnl ((&[N] 'NOFRAMES') | (&[n] 'noframes')) Spnl HtmlAttribute* '>') */
+		/* 83 HtmlBlockOpenNoframes <- ('<' Spnl ((&[N] 'NOFRAMES') | (&[n] 'noframes')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5425,7 +5454,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 83 HtmlBlockCloseNoframes <- ('<' Spnl '/' ((&[N] 'NOFRAMES') | (&[n] 'noframes')) Spnl '>') */
+		/* 84 HtmlBlockCloseNoframes <- ('<' Spnl '/' ((&[N] 'NOFRAMES') | (&[n] 'noframes')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5468,7 +5497,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 84 HtmlBlockNoframes <- (HtmlBlockOpenNoframes (HtmlBlockNoframes / (!HtmlBlockCloseNoframes .))* HtmlBlockCloseNoframes) */
+		/* 85 HtmlBlockNoframes <- (HtmlBlockOpenNoframes (HtmlBlockNoframes / (!HtmlBlockCloseNoframes .))* HtmlBlockCloseNoframes) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenNoframes]() {
@@ -5504,7 +5533,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 85 HtmlBlockOpenNoscript <- ('<' Spnl ((&[N] 'NOSCRIPT') | (&[n] 'noscript')) Spnl HtmlAttribute* '>') */
+		/* 86 HtmlBlockOpenNoscript <- ('<' Spnl ((&[N] 'NOSCRIPT') | (&[n] 'noscript')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5550,7 +5579,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 86 HtmlBlockCloseNoscript <- ('<' Spnl '/' ((&[N] 'NOSCRIPT') | (&[n] 'noscript')) Spnl '>') */
+		/* 87 HtmlBlockCloseNoscript <- ('<' Spnl '/' ((&[N] 'NOSCRIPT') | (&[n] 'noscript')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5593,7 +5622,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 87 HtmlBlockNoscript <- (HtmlBlockOpenNoscript (HtmlBlockNoscript / (!HtmlBlockCloseNoscript .))* HtmlBlockCloseNoscript) */
+		/* 88 HtmlBlockNoscript <- (HtmlBlockOpenNoscript (HtmlBlockNoscript / (!HtmlBlockCloseNoscript .))* HtmlBlockCloseNoscript) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenNoscript]() {
@@ -5629,7 +5658,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 88 HtmlBlockOpenOl <- ('<' Spnl ((&[O] 'OL') | (&[o] 'ol')) Spnl HtmlAttribute* '>') */
+		/* 89 HtmlBlockOpenOl <- ('<' Spnl ((&[O] 'OL') | (&[o] 'ol')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5675,7 +5704,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 89 HtmlBlockCloseOl <- ('<' Spnl '/' ((&[O] 'OL') | (&[o] 'ol')) Spnl '>') */
+		/* 90 HtmlBlockCloseOl <- ('<' Spnl '/' ((&[O] 'OL') | (&[o] 'ol')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5718,7 +5747,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 90 HtmlBlockOl <- (HtmlBlockOpenOl (HtmlBlockOl / (!HtmlBlockCloseOl .))* HtmlBlockCloseOl) */
+		/* 91 HtmlBlockOl <- (HtmlBlockOpenOl (HtmlBlockOl / (!HtmlBlockCloseOl .))* HtmlBlockCloseOl) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenOl]() {
@@ -5754,7 +5783,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 91 HtmlBlockOpenP <- ('<' Spnl ((&[P] 'P') | (&[p] 'p')) Spnl HtmlAttribute* '>') */
+		/* 92 HtmlBlockOpenP <- ('<' Spnl ((&[P] 'P') | (&[p] 'p')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5794,7 +5823,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 92 HtmlBlockCloseP <- ('<' Spnl '/' ((&[P] 'P') | (&[p] 'p')) Spnl '>') */
+		/* 93 HtmlBlockCloseP <- ('<' Spnl '/' ((&[P] 'P') | (&[p] 'p')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5831,7 +5860,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 93 HtmlBlockP <- (HtmlBlockOpenP (HtmlBlockP / (!HtmlBlockCloseP .))* HtmlBlockCloseP) */
+		/* 94 HtmlBlockP <- (HtmlBlockOpenP (HtmlBlockP / (!HtmlBlockCloseP .))* HtmlBlockCloseP) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenP]() {
@@ -5867,7 +5896,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 94 HtmlBlockOpenPre <- ('<' Spnl ((&[P] 'PRE') | (&[p] 'pre')) Spnl HtmlAttribute* '>') */
+		/* 95 HtmlBlockOpenPre <- ('<' Spnl ((&[P] 'PRE') | (&[p] 'pre')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5913,7 +5942,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 95 HtmlBlockClosePre <- ('<' Spnl '/' ((&[P] 'PRE') | (&[p] 'pre')) Spnl '>') */
+		/* 96 HtmlBlockClosePre <- ('<' Spnl '/' ((&[P] 'PRE') | (&[p] 'pre')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -5956,7 +5985,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 96 HtmlBlockPre <- (HtmlBlockOpenPre (HtmlBlockPre / (!HtmlBlockClosePre .))* HtmlBlockClosePre) */
+		/* 97 HtmlBlockPre <- (HtmlBlockOpenPre (HtmlBlockPre / (!HtmlBlockClosePre .))* HtmlBlockClosePre) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenPre]() {
@@ -5992,7 +6021,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 97 HtmlBlockOpenTable <- ('<' Spnl ((&[T] 'TABLE') | (&[t] 'table')) Spnl HtmlAttribute* '>') */
+		/* 98 HtmlBlockOpenTable <- ('<' Spnl ((&[T] 'TABLE') | (&[t] 'table')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6038,7 +6067,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 98 HtmlBlockCloseTable <- ('<' Spnl '/' ((&[T] 'TABLE') | (&[t] 'table')) Spnl '>') */
+		/* 99 HtmlBlockCloseTable <- ('<' Spnl '/' ((&[T] 'TABLE') | (&[t] 'table')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6081,7 +6110,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 99 HtmlBlockTable <- (HtmlBlockOpenTable (HtmlBlockTable / (!HtmlBlockCloseTable .))* HtmlBlockCloseTable) */
+		/* 100 HtmlBlockTable <- (HtmlBlockOpenTable (HtmlBlockTable / (!HtmlBlockCloseTable .))* HtmlBlockCloseTable) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenTable]() {
@@ -6117,7 +6146,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 100 HtmlBlockOpenUl <- ('<' Spnl ((&[U] 'UL') | (&[u] 'ul')) Spnl HtmlAttribute* '>') */
+		/* 101 HtmlBlockOpenUl <- ('<' Spnl ((&[U] 'UL') | (&[u] 'ul')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6163,7 +6192,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 101 HtmlBlockCloseUl <- ('<' Spnl '/' ((&[U] 'UL') | (&[u] 'ul')) Spnl '>') */
+		/* 102 HtmlBlockCloseUl <- ('<' Spnl '/' ((&[U] 'UL') | (&[u] 'ul')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6206,7 +6235,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 102 HtmlBlockUl <- (HtmlBlockOpenUl (HtmlBlockUl / (!HtmlBlockCloseUl .))* HtmlBlockCloseUl) */
+		/* 103 HtmlBlockUl <- (HtmlBlockOpenUl (HtmlBlockUl / (!HtmlBlockCloseUl .))* HtmlBlockCloseUl) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenUl]() {
@@ -6242,7 +6271,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 103 HtmlBlockOpenDd <- ('<' Spnl ((&[D] 'DD') | (&[d] 'dd')) Spnl HtmlAttribute* '>') */
+		/* 104 HtmlBlockOpenDd <- ('<' Spnl ((&[D] 'DD') | (&[d] 'dd')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6288,7 +6317,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 104 HtmlBlockCloseDd <- ('<' Spnl '/' ((&[D] 'DD') | (&[d] 'dd')) Spnl '>') */
+		/* 105 HtmlBlockCloseDd <- ('<' Spnl '/' ((&[D] 'DD') | (&[d] 'dd')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6331,7 +6360,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 105 HtmlBlockDd <- (HtmlBlockOpenDd (HtmlBlockDd / (!HtmlBlockCloseDd .))* HtmlBlockCloseDd) */
+		/* 106 HtmlBlockDd <- (HtmlBlockOpenDd (HtmlBlockDd / (!HtmlBlockCloseDd .))* HtmlBlockCloseDd) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenDd]() {
@@ -6367,7 +6396,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 106 HtmlBlockOpenDt <- ('<' Spnl ((&[D] 'DT') | (&[d] 'dt')) Spnl HtmlAttribute* '>') */
+		/* 107 HtmlBlockOpenDt <- ('<' Spnl ((&[D] 'DT') | (&[d] 'dt')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6413,7 +6442,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 107 HtmlBlockCloseDt <- ('<' Spnl '/' ((&[D] 'DT') | (&[d] 'dt')) Spnl '>') */
+		/* 108 HtmlBlockCloseDt <- ('<' Spnl '/' ((&[D] 'DT') | (&[d] 'dt')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6456,7 +6485,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 108 HtmlBlockDt <- (HtmlBlockOpenDt (HtmlBlockDt / (!HtmlBlockCloseDt .))* HtmlBlockCloseDt) */
+		/* 109 HtmlBlockDt <- (HtmlBlockOpenDt (HtmlBlockDt / (!HtmlBlockCloseDt .))* HtmlBlockCloseDt) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenDt]() {
@@ -6492,7 +6521,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 109 HtmlBlockOpenFrameset <- ('<' Spnl ((&[F] 'FRAMESET') | (&[f] 'frameset')) Spnl HtmlAttribute* '>') */
+		/* 110 HtmlBlockOpenFrameset <- ('<' Spnl ((&[F] 'FRAMESET') | (&[f] 'frameset')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6538,7 +6567,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 110 HtmlBlockCloseFrameset <- ('<' Spnl '/' ((&[F] 'FRAMESET') | (&[f] 'frameset')) Spnl '>') */
+		/* 111 HtmlBlockCloseFrameset <- ('<' Spnl '/' ((&[F] 'FRAMESET') | (&[f] 'frameset')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6581,7 +6610,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 111 HtmlBlockFrameset <- (HtmlBlockOpenFrameset (HtmlBlockFrameset / (!HtmlBlockCloseFrameset .))* HtmlBlockCloseFrameset) */
+		/* 112 HtmlBlockFrameset <- (HtmlBlockOpenFrameset (HtmlBlockFrameset / (!HtmlBlockCloseFrameset .))* HtmlBlockCloseFrameset) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenFrameset]() {
@@ -6617,7 +6646,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 112 HtmlBlockOpenLi <- ('<' Spnl ((&[L] 'LI') | (&[l] 'li')) Spnl HtmlAttribute* '>') */
+		/* 113 HtmlBlockOpenLi <- ('<' Spnl ((&[L] 'LI') | (&[l] 'li')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6663,7 +6692,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 113 HtmlBlockCloseLi <- ('<' Spnl '/' ((&[L] 'LI') | (&[l] 'li')) Spnl '>') */
+		/* 114 HtmlBlockCloseLi <- ('<' Spnl '/' ((&[L] 'LI') | (&[l] 'li')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6706,7 +6735,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 114 HtmlBlockLi <- (HtmlBlockOpenLi (HtmlBlockLi / (!HtmlBlockCloseLi .))* HtmlBlockCloseLi) */
+		/* 115 HtmlBlockLi <- (HtmlBlockOpenLi (HtmlBlockLi / (!HtmlBlockCloseLi .))* HtmlBlockCloseLi) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenLi]() {
@@ -6742,7 +6771,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 115 HtmlBlockOpenTbody <- ('<' Spnl ((&[T] 'TBODY') | (&[t] 'tbody')) Spnl HtmlAttribute* '>') */
+		/* 116 HtmlBlockOpenTbody <- ('<' Spnl ((&[T] 'TBODY') | (&[t] 'tbody')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6788,7 +6817,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 116 HtmlBlockCloseTbody <- ('<' Spnl '/' ((&[T] 'TBODY') | (&[t] 'tbody')) Spnl '>') */
+		/* 117 HtmlBlockCloseTbody <- ('<' Spnl '/' ((&[T] 'TBODY') | (&[t] 'tbody')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6831,7 +6860,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 117 HtmlBlockTbody <- (HtmlBlockOpenTbody (HtmlBlockTbody / (!HtmlBlockCloseTbody .))* HtmlBlockCloseTbody) */
+		/* 118 HtmlBlockTbody <- (HtmlBlockOpenTbody (HtmlBlockTbody / (!HtmlBlockCloseTbody .))* HtmlBlockCloseTbody) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenTbody]() {
@@ -6867,7 +6896,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 118 HtmlBlockOpenTd <- ('<' Spnl ((&[T] 'TD') | (&[t] 'td')) Spnl HtmlAttribute* '>') */
+		/* 119 HtmlBlockOpenTd <- ('<' Spnl ((&[T] 'TD') | (&[t] 'td')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6913,7 +6942,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 119 HtmlBlockCloseTd <- ('<' Spnl '/' ((&[T] 'TD') | (&[t] 'td')) Spnl '>') */
+		/* 120 HtmlBlockCloseTd <- ('<' Spnl '/' ((&[T] 'TD') | (&[t] 'td')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -6956,7 +6985,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 120 HtmlBlockTd <- (HtmlBlockOpenTd (HtmlBlockTd / (!HtmlBlockCloseTd .))* HtmlBlockCloseTd) */
+		/* 121 HtmlBlockTd <- (HtmlBlockOpenTd (HtmlBlockTd / (!HtmlBlockCloseTd .))* HtmlBlockCloseTd) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenTd]() {
@@ -6992,7 +7021,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 121 HtmlBlockOpenTfoot <- ('<' Spnl ((&[T] 'TFOOT') | (&[t] 'tfoot')) Spnl HtmlAttribute* '>') */
+		/* 122 HtmlBlockOpenTfoot <- ('<' Spnl ((&[T] 'TFOOT') | (&[t] 'tfoot')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7038,7 +7067,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 122 HtmlBlockCloseTfoot <- ('<' Spnl '/' ((&[T] 'TFOOT') | (&[t] 'tfoot')) Spnl '>') */
+		/* 123 HtmlBlockCloseTfoot <- ('<' Spnl '/' ((&[T] 'TFOOT') | (&[t] 'tfoot')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7081,7 +7110,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 123 HtmlBlockTfoot <- (HtmlBlockOpenTfoot (HtmlBlockTfoot / (!HtmlBlockCloseTfoot .))* HtmlBlockCloseTfoot) */
+		/* 124 HtmlBlockTfoot <- (HtmlBlockOpenTfoot (HtmlBlockTfoot / (!HtmlBlockCloseTfoot .))* HtmlBlockCloseTfoot) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenTfoot]() {
@@ -7117,7 +7146,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 124 HtmlBlockOpenTh <- ('<' Spnl ((&[T] 'TH') | (&[t] 'th')) Spnl HtmlAttribute* '>') */
+		/* 125 HtmlBlockOpenTh <- ('<' Spnl ((&[T] 'TH') | (&[t] 'th')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7163,7 +7192,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 125 HtmlBlockCloseTh <- ('<' Spnl '/' ((&[T] 'TH') | (&[t] 'th')) Spnl '>') */
+		/* 126 HtmlBlockCloseTh <- ('<' Spnl '/' ((&[T] 'TH') | (&[t] 'th')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7206,7 +7235,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 126 HtmlBlockTh <- (HtmlBlockOpenTh (HtmlBlockTh / (!HtmlBlockCloseTh .))* HtmlBlockCloseTh) */
+		/* 127 HtmlBlockTh <- (HtmlBlockOpenTh (HtmlBlockTh / (!HtmlBlockCloseTh .))* HtmlBlockCloseTh) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenTh]() {
@@ -7242,7 +7271,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 127 HtmlBlockOpenThead <- ('<' Spnl ((&[T] 'THEAD') | (&[t] 'thead')) Spnl HtmlAttribute* '>') */
+		/* 128 HtmlBlockOpenThead <- ('<' Spnl ((&[T] 'THEAD') | (&[t] 'thead')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7288,7 +7317,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 128 HtmlBlockCloseThead <- ('<' Spnl '/' ((&[T] 'THEAD') | (&[t] 'thead')) Spnl '>') */
+		/* 129 HtmlBlockCloseThead <- ('<' Spnl '/' ((&[T] 'THEAD') | (&[t] 'thead')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7331,7 +7360,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 129 HtmlBlockThead <- (HtmlBlockOpenThead (HtmlBlockThead / (!HtmlBlockCloseThead .))* HtmlBlockCloseThead) */
+		/* 130 HtmlBlockThead <- (HtmlBlockOpenThead (HtmlBlockThead / (!HtmlBlockCloseThead .))* HtmlBlockCloseThead) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenThead]() {
@@ -7367,7 +7396,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 130 HtmlBlockOpenTr <- ('<' Spnl ((&[T] 'TR') | (&[t] 'tr')) Spnl HtmlAttribute* '>') */
+		/* 131 HtmlBlockOpenTr <- ('<' Spnl ((&[T] 'TR') | (&[t] 'tr')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7413,7 +7442,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 131 HtmlBlockCloseTr <- ('<' Spnl '/' ((&[T] 'TR') | (&[t] 'tr')) Spnl '>') */
+		/* 132 HtmlBlockCloseTr <- ('<' Spnl '/' ((&[T] 'TR') | (&[t] 'tr')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7456,7 +7485,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 132 HtmlBlockTr <- (HtmlBlockOpenTr (HtmlBlockTr / (!HtmlBlockCloseTr .))* HtmlBlockCloseTr) */
+		/* 133 HtmlBlockTr <- (HtmlBlockOpenTr (HtmlBlockTr / (!HtmlBlockCloseTr .))* HtmlBlockCloseTr) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenTr]() {
@@ -7492,7 +7521,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 133 HtmlBlockOpenScript <- ('<' Spnl ((&[S] 'SCRIPT') | (&[s] 'script')) Spnl HtmlAttribute* '>') */
+		/* 134 HtmlBlockOpenScript <- ('<' Spnl ((&[S] 'SCRIPT') | (&[s] 'script')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7538,7 +7567,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 134 HtmlBlockCloseScript <- ('<' Spnl '/' ((&[S] 'SCRIPT') | (&[s] 'script')) Spnl '>') */
+		/* 135 HtmlBlockCloseScript <- ('<' Spnl '/' ((&[S] 'SCRIPT') | (&[s] 'script')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7581,7 +7610,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 135 HtmlBlockScript <- (HtmlBlockOpenScript (!HtmlBlockCloseScript .)* HtmlBlockCloseScript) */
+		/* 136 HtmlBlockScript <- (HtmlBlockOpenScript (!HtmlBlockCloseScript .)* HtmlBlockCloseScript) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenScript]() {
@@ -7611,7 +7640,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 136 HtmlBlockOpenHead <- ('<' Spnl ((&[H] 'HEAD') | (&[h] 'head')) Spnl HtmlAttribute* '>') */
+		/* 137 HtmlBlockOpenHead <- ('<' Spnl ((&[H] 'HEAD') | (&[h] 'head')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7657,7 +7686,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 137 HtmlBlockCloseHead <- ('<' Spnl '/' ((&[H] 'HEAD') | (&[h] 'head')) Spnl '>') */
+		/* 138 HtmlBlockCloseHead <- ('<' Spnl '/' ((&[H] 'HEAD') | (&[h] 'head')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7700,7 +7729,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 138 HtmlBlockHead <- (HtmlBlockOpenHead (!HtmlBlockCloseHead .)* HtmlBlockCloseHead) */
+		/* 139 HtmlBlockHead <- (HtmlBlockOpenHead (!HtmlBlockCloseHead .)* HtmlBlockCloseHead) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHtmlBlockOpenHead]() {
@@ -7730,7 +7759,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 139 HtmlBlockInTags <- (HtmlBlockAddress / HtmlBlockBlockquote / HtmlBlockCenter / HtmlBlockDir / HtmlBlockDiv / HtmlBlockDl / HtmlBlockFieldset / HtmlBlockForm / HtmlBlockH1 / HtmlBlockH2 / HtmlBlockH3 / HtmlBlockH4 / HtmlBlockH5 / HtmlBlockH6 / HtmlBlockMenu / HtmlBlockNoframes / HtmlBlockNoscript / HtmlBlockOl / HtmlBlockP / HtmlBlockPre / HtmlBlockTable / HtmlBlockUl / HtmlBlockDd / HtmlBlockDt / HtmlBlockFrameset / HtmlBlockLi / HtmlBlockTbody / HtmlBlockTd / HtmlBlockTfoot / HtmlBlockTh / HtmlBlockThead / HtmlBlockTr / HtmlBlockScript / HtmlBlockHead) */
+		/* 140 HtmlBlockInTags <- (HtmlBlockAddress / HtmlBlockBlockquote / HtmlBlockCenter / HtmlBlockDir / HtmlBlockDiv / HtmlBlockDl / HtmlBlockFieldset / HtmlBlockForm / HtmlBlockH1 / HtmlBlockH2 / HtmlBlockH3 / HtmlBlockH4 / HtmlBlockH5 / HtmlBlockH6 / HtmlBlockMenu / HtmlBlockNoframes / HtmlBlockNoscript / HtmlBlockOl / HtmlBlockP / HtmlBlockPre / HtmlBlockTable / HtmlBlockUl / HtmlBlockDd / HtmlBlockDt / HtmlBlockFrameset / HtmlBlockLi / HtmlBlockTbody / HtmlBlockTd / HtmlBlockTfoot / HtmlBlockTh / HtmlBlockThead / HtmlBlockTr / HtmlBlockScript / HtmlBlockHead) */
 		func() (match bool) {
 			if !p.rules[ruleHtmlBlockAddress]() {
 				goto nextAlt
@@ -7904,7 +7933,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 140 HtmlBlock <- (&'<' < (HtmlBlockInTags / HtmlComment / HtmlBlockSelfClosing) > BlankLine+ {   if p.extension.FilterHTML {
+		/* 141 HtmlBlock <- (&'<' < (HtmlBlockInTags / HtmlComment / HtmlBlockSelfClosing) > BlankLine+ {   if p.extension.FilterHTML {
                     yy = p.mkList(LIST, nil)
                 } else {
                     yy = p.mkString(yytext)
@@ -7941,14 +7970,14 @@ func (p *yyParser) Init() {
 			}
 			goto loop
 		out:
-			do(56)
+			do(59)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 141 HtmlBlockSelfClosing <- ('<' Spnl HtmlBlockType Spnl HtmlAttribute* '/' Spnl '>') */
+		/* 142 HtmlBlockSelfClosing <- ('<' Spnl HtmlBlockType Spnl HtmlAttribute* '/' Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -7984,7 +8013,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 142 HtmlBlockType <- ('dir' / 'div' / 'dl' / 'fieldset' / 'form' / 'h1' / 'h2' / 'h3' / 'h4' / 'h5' / 'h6' / 'noframes' / 'p' / 'table' / 'dd' / 'tbody' / 'td' / 'tfoot' / 'th' / 'thead' / 'DIR' / 'DIV' / 'DL' / 'FIELDSET' / 'FORM' / 'H1' / 'H2' / 'H3' / 'H4' / 'H5' / 'H6' / 'NOFRAMES' / 'P' / 'TABLE' / 'DD' / 'TBODY' / 'TD' / 'TFOOT' / 'TH' / 'THEAD' / ((&[S] 'SCRIPT') | (&[T] 'TR') | (&[L] 'LI') | (&[F] 'FRAMESET') | (&[D] 'DT') | (&[U] 'UL') | (&[P] 'PRE') | (&[O] 'OL') | (&[N] 'NOSCRIPT') | (&[M] 'MENU') | (&[I] 'ISINDEX') | (&[H] 'HR') | (&[C] 'CENTER') | (&[B] 'BLOCKQUOTE') | (&[A] 'ADDRESS') | (&[s] 'script') | (&[t] 'tr') | (&[l] 'li') | (&[f] 'frameset') | (&[d] 'dt') | (&[u] 'ul') | (&[p] 'pre') | (&[o] 'ol') | (&[n] 'noscript') | (&[m] 'menu') | (&[i] 'isindex') | (&[h] 'hr') | (&[c] 'center') | (&[b] 'blockquote') | (&[a] 'address'))) */
+		/* 143 HtmlBlockType <- ('dir' / 'div' / 'dl' / 'fieldset' / 'form' / 'h1' / 'h2' / 'h3' / 'h4' / 'h5' / 'h6' / 'noframes' / 'p' / 'table' / 'dd' / 'tbody' / 'td' / 'tfoot' / 'th' / 'thead' / 'DIR' / 'DIV' / 'DL' / 'FIELDSET' / 'FORM' / 'H1' / 'H2' / 'H3' / 'H4' / 'H5' / 'H6' / 'NOFRAMES' / 'P' / 'TABLE' / 'DD' / 'TBODY' / 'TD' / 'TFOOT' / 'TH' / 'THEAD' / ((&[S] 'SCRIPT') | (&[T] 'TR') | (&[L] 'LI') | (&[F] 'FRAMESET') | (&[D] 'DT') | (&[U] 'UL') | (&[P] 'PRE') | (&[O] 'OL') | (&[N] 'NOSCRIPT') | (&[M] 'MENU') | (&[I] 'ISINDEX') | (&[H] 'HR') | (&[C] 'CENTER') | (&[B] 'BLOCKQUOTE') | (&[A] 'ADDRESS') | (&[s] 'script') | (&[t] 'tr') | (&[l] 'li') | (&[f] 'frameset') | (&[d] 'dt') | (&[u] 'ul') | (&[p] 'pre') | (&[o] 'ol') | (&[n] 'noscript') | (&[m] 'menu') | (&[i] 'isindex') | (&[h] 'hr') | (&[c] 'center') | (&[b] 'blockquote') | (&[a] 'address'))) */
 		func() (match bool) {
 			if !matchString("dir") {
 				goto nextAlt
@@ -8349,7 +8378,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 143 StyleOpen <- ('<' Spnl ((&[S] 'STYLE') | (&[s] 'style')) Spnl HtmlAttribute* '>') */
+		/* 144 StyleOpen <- ('<' Spnl ((&[S] 'STYLE') | (&[s] 'style')) Spnl HtmlAttribute* '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -8395,7 +8424,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 144 StyleClose <- ('<' Spnl '/' ((&[S] 'STYLE') | (&[s] 'style')) Spnl '>') */
+		/* 145 StyleClose <- ('<' Spnl '/' ((&[S] 'STYLE') | (&[s] 'style')) Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -8438,7 +8467,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 145 InStyleTags <- (StyleOpen (!StyleClose .)* StyleClose) */
+		/* 146 InStyleTags <- (StyleOpen (!StyleClose .)* StyleClose) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleStyleOpen]() {
@@ -8468,7 +8497,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 146 StyleBlock <- (< InStyleTags > BlankLine* {   if p.extension.FilterStyles {
+		/* 147 StyleBlock <- (< InStyleTags > BlankLine* {   if p.extension.FilterStyles {
                         yy = p.mkList(LIST, nil)
                     } else {
                         yy = p.mkString(yytext)
@@ -8488,14 +8517,14 @@ func (p *yyParser) Init() {
 			}
 			goto loop
 		out:
-			do(57)
+			do(60)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 147 Inlines <- (StartList ((!Endline Inline { a = cons(yy, a) }) / (Endline &Inline { a = cons(c, a) }))+ Endline? {
+		/* 148 Inlines <- (StartList ((!Endline Inline { a = cons(yy, a) }) / (Endline &Inline { a = cons(c, a) }))+ Endline? {
 				yy = p.mkList(LIST, a)
 			}) */
 		func() (match bool) {
@@ -8504,7 +8533,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleStartList]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 			{
 				position1 := position
 				if !p.rules[ruleEndline]() {
@@ -8515,14 +8544,14 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleInline]() {
 					goto nextAlt
 				}
-				do(58)
+				do(61)
 				goto ok
 			nextAlt:
 				position = position1
 				if !p.rules[ruleEndline]() {
 					goto ko
 				}
-				doarg(yySet, -1)
+				doarg(yySet, -2)
 				{
 					position2 := position
 					if !p.rules[ruleInline]() {
@@ -8530,7 +8559,7 @@ func (p *yyParser) Init() {
 					}
 					position = position2
 				}
-				do(59)
+				do(62)
 			}
 		ok:
 		loop:
@@ -8546,14 +8575,14 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleInline]() {
 						goto nextAlt8
 					}
-					do(58)
+					do(61)
 					goto ok7
 				nextAlt8:
 					position = position4
 					if !p.rules[ruleEndline]() {
 						goto out
 					}
-					doarg(yySet, -1)
+					doarg(yySet, -2)
 					{
 						position5 := position
 						if !p.rules[ruleInline]() {
@@ -8561,7 +8590,7 @@ func (p *yyParser) Init() {
 						}
 						position = position5
 					}
-					do(59)
+					do(62)
 				}
 			ok7:
 				goto loop
@@ -8572,7 +8601,7 @@ func (p *yyParser) Init() {
 				goto ko11
 			}
 		ko11:
-			do(60)
+			do(63)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -8580,7 +8609,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 148 Inline <- (Link / Str / Endline / UlOrStarLine / Space / Strong / Emph / Strike / NoteReference / Footnote / Code / RawHtml / Entity / EscapedChar / Smart / Symbol) */
+		/* 149 Inline <- (Link / Str / Endline / UlOrStarLine / Space / Strong / Emph / Strike / NoteReference / Footnote / Code / RawHtml / Entity / EscapedChar / Smart / Symbol) */
 		func() (match bool) {
 			if !p.rules[ruleLink]() {
 				goto nextAlt
@@ -8664,7 +8693,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 149 Space <- (Spacechar+ { yy = p.mkString(" ")
+		/* 150 Space <- (Spacechar+ { yy = p.mkString(" ")
           yy.key = SPACE }) */
 		func() (match bool) {
 			position0 := position
@@ -8677,14 +8706,14 @@ func (p *yyParser) Init() {
 			}
 			goto loop
 		out:
-			do(61)
+			do(64)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 150 Str <- (StartList < NormalChar+ > { a = cons(p.mkString(yytext), a) } (StrChunk { a = cons(yy, a) })* { if a.next == nil { yy = a; } else { yy = p.mkList(LIST, a) } }) */
+		/* 151 Str <- (StartList < NormalChar+ > { a = cons(p.mkString(yytext), a) } (StrChunk { a = cons(yy, a) })* { if a.next == nil { yy = a; } else { yy = p.mkList(LIST, a) } }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
@@ -8703,19 +8732,19 @@ func (p *yyParser) Init() {
 			goto loop
 		out:
 			end = position
-			do(62)
+			do(65)
 		loop3:
 			{
 				position1, thunkPosition1 := position, thunkPosition
 				if !p.rules[ruleStrChunk]() {
 					goto out4
 				}
-				do(63)
+				do(66)
 				goto loop3
 			out4:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(64)
+			do(67)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -8723,7 +8752,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 151 StrChunk <- ((< (NormalChar / ('_'+ &Alphanumeric))+ > { yy = p.mkString(yytext) }) / AposChunk) */
+		/* 152 StrChunk <- ((< (NormalChar / ('_'+ &Alphanumeric))+ > { yy = p.mkString(yytext) }) / AposChunk) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -8781,7 +8810,7 @@ func (p *yyParser) Init() {
 					position = position2
 				}
 				end = position
-				do(65)
+				do(68)
 				goto ok
 			nextAlt:
 				position = position1
@@ -8796,7 +8825,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 152 AposChunk <- (&{p.extension.Smart} '\'' &Alphanumeric { yy = p.mkElem(APOSTROPHE) }) */
+		/* 153 AposChunk <- (&{p.extension.Smart} '\'' &Alphanumeric { yy = p.mkElem(APOSTROPHE) }) */
 		func() (match bool) {
 			position0 := position
 			if !(p.extension.Smart) {
@@ -8812,14 +8841,14 @@ func (p *yyParser) Init() {
 				}
 				position = position1
 			}
-			do(66)
+			do(69)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 153 EscapedChar <- ('\\' !Newline < [-\\`|*_{}[\]()#+.!><] > { yy = p.mkString(yytext) }) */
+		/* 154 EscapedChar <- ('\\' !Newline < [-\\`|*_{}[\]()#+.!><] > { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('\\') {
@@ -8835,14 +8864,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			end = position
-			do(67)
+			do(70)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 154 Entity <- ((HexEntity / DecEntity / CharEntity) { yy = p.mkString(yytext); yy.key = HTML }) */
+		/* 155 Entity <- ((HexEntity / DecEntity / CharEntity) { yy = p.mkString(yytext); yy.key = HTML }) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleHexEntity]() {
@@ -8859,14 +8888,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 		ok:
-			do(68)
+			do(71)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 155 Endline <- (LineBreak / TerminalEndline / NormalEndline) */
+		/* 156 Endline <- (LineBreak / TerminalEndline / NormalEndline) */
 		func() (match bool) {
 			if !p.rules[ruleLineBreak]() {
 				goto nextAlt
@@ -8885,7 +8914,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 156 NormalEndline <- (Sp Newline !BlankLine !'>' !(Line ((&[\-] '-'+) | (&[=] '='+)) Newline) { yy = p.mkString("\n")
+		/* 157 NormalEndline <- (Sp Newline !BlankLine !'>' !(Line ((&[\-] '-'+) | (&[=] '='+)) Newline) { yy = p.mkString("\n")
                     yy.key = SPACE }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
@@ -8946,14 +8975,14 @@ func (p *yyParser) Init() {
 			ok2:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(69)
+			do(72)
 			match = true
 			return
 		ko:
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 157 TerminalEndline <- (Sp Newline !. { yy = nil }) */
+		/* 158 TerminalEndline <- (Sp Newline !. { yy = nil }) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleSp]() {
@@ -8965,14 +8994,14 @@ func (p *yyParser) Init() {
 			if (position < len(p.Buffer)) {
 				goto ko
 			}
-			do(70)
+			do(73)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 158 LineBreak <- ('  ' NormalEndline { yy = p.mkElem(LINEBREAK) }) */
+		/* 159 LineBreak <- ('  ' NormalEndline { yy = p.mkElem(LINEBREAK) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			if !matchString("  ") {
@@ -8981,14 +9010,14 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleNormalEndline]() {
 				goto ko
 			}
-			do(71)
+			do(74)
 			match = true
 			return
 		ko:
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 159 Symbol <- (< SpecialChar > { yy = p.mkString(yytext) }) */
+		/* 160 Symbol <- (< SpecialChar > { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			position0 := position
 			begin = position
@@ -8996,14 +9025,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			end = position
-			do(72)
+			do(75)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 160 UlOrStarLine <- ((UlLine / StarLine) { yy = p.mkString(yytext) }) */
+		/* 161 UlOrStarLine <- ((UlLine / StarLine) { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleUlLine]() {
@@ -9015,14 +9044,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 		ok:
-			do(73)
+			do(76)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 161 StarLine <- ((&[*] (< '****' '*'* >)) | (&[\t ] (< Spacechar '*'+ &Spacechar >))) */
+		/* 162 StarLine <- ((&[*] (< '****' '*'* >)) | (&[\t ] (< Spacechar '*'+ &Spacechar >))) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -9074,7 +9103,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 162 UlLine <- ((&[_] (< '____' '_'* >)) | (&[\t ] (< Spacechar '_'+ &Spacechar >))) */
+		/* 163 UlLine <- ((&[_] (< '____' '_'* >)) | (&[\t ] (< Spacechar '_'+ &Spacechar >))) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -9126,7 +9155,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 163 Whitespace <- ((&[\n\r] Newline) | (&[\t ] Spacechar)) */
+		/* 164 Whitespace <- ((&[\n\r] Newline) | (&[\t ] Spacechar)) */
 		func() (match bool) {
 			{
 				if position == len(p.Buffer) {
@@ -9148,7 +9177,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 164 Emph <- ('*' !Whitespace StartList (!'*' Inline { a = cons(b, a) })+ '*' { yy = p.mkList(EMPH, a) }) */
+		/* 165 Emph <- ('*' !Whitespace StartList (!'*' Inline { a = cons(b, a) })+ '*' { yy = p.mkList(EMPH, a) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 2)
@@ -9171,7 +9200,7 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			doarg(yySet, -2)
-			do(74)
+			do(77)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -9182,7 +9211,7 @@ func (p *yyParser) Init() {
 					goto out
 				}
 				doarg(yySet, -2)
-				do(74)
+				do(77)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -9190,7 +9219,7 @@ func (p *yyParser) Init() {
 			if !matchChar('*') {
 				goto ko
 			}
-			do(75)
+			do(78)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -9198,7 +9227,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 165 Strong <- ('**' !Whitespace StartList (!'**' Inline { a = cons(b, a) })+ '**' { yy = p.mkList(STRONG, a) }) */
+		/* 166 Strong <- ('**' !Whitespace StartList (!'**' Inline { a = cons(b, a) })+ '**' { yy = p.mkList(STRONG, a) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 2)
@@ -9223,7 +9252,7 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			doarg(yySet, -2)
-			do(76)
+			do(79)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -9236,7 +9265,7 @@ func (p *yyParser) Init() {
 					goto out
 				}
 				doarg(yySet, -2)
-				do(76)
+				do(79)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -9244,7 +9273,7 @@ func (p *yyParser) Init() {
 			if !matchString("**") {
 				goto ko
 			}
-			do(77)
+			do(80)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -9252,7 +9281,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 166 Strike <- (&{p.extension.Strike} '~~' !Whitespace StartList (!'~~' Inline { a = cons(b, a) })+ '~~' { yy = p.mkList(STRIKE, a) }) */
+		/* 167 Strike <- (&{p.extension.Strike} '~~' !Whitespace StartList (!'~~' Inline { a = cons(b, a) })+ '~~' { yy = p.mkList(STRIKE, a) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 2)
@@ -9270,7 +9299,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleStartList]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 			if !matchString("~~") {
 				goto ok4
 			}
@@ -9279,8 +9308,8 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleInline]() {
 				goto ko
 			}
-			doarg(yySet, -1)
-			do(78)
+			doarg(yySet, -2)
+			do(81)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -9292,8 +9321,8 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleInline]() {
 					goto out
 				}
-				doarg(yySet, -1)
-				do(78)
+				doarg(yySet, -2)
+				do(81)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -9301,7 +9330,7 @@ func (p *yyParser) Init() {
 			if !matchString("~~") {
 				goto ko
 			}
-			do(79)
+			do(82)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -9309,7 +9338,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 167 Link <- (ReferenceLink / ((&[\[] ExplicitLink) | (&[<A-Za-z] AutoLink))) */
+		/* 168 Link <- (ReferenceLink / ((&[\[] ExplicitLink) | (&[<A-Z`-z] AutoLink))) */
 		func() (match bool) {
 			if !p.rules[ruleReferenceLink]() {
 				goto nextAlt
@@ -9335,7 +9364,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 168 ReferenceLink <- (UnquotedRefLinkUnderbar / QuotedRefLinkUnderbar) */
+		/* 169 ReferenceLink <- (UnquotedRefLinkUnderbar / QuotedRefLinkUnderbar) */
 		func() (match bool) {
 			if !p.rules[ruleUnquotedRefLinkUnderbar]() {
 				goto nextAlt
@@ -9349,7 +9378,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 169 UnquotedRefLinkUnderbar <- (< UnquotedLinkSource > '_' {
+		/* 170 UnquotedRefLinkUnderbar <- (< UnquotedLinkSource > '_' {
                            if match, found := p.findReference(p.mkString(a.contents.str)); found {
                                yy = p.mkLink(p.mkString(a.contents.str), match.url, match.title)
                                a = nil
@@ -9371,7 +9400,7 @@ func (p *yyParser) Init() {
 			if !matchChar('_') {
 				goto ko
 			}
-			do(80)
+			do(83)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -9379,7 +9408,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 170 QuotedRefLinkUnderbar <- (!'`_' !'``_' '`' !'``' QuotedRefSource ('`' !'``') '_' {
+		/* 171 QuotedRefLinkUnderbar <- (!'`_' !'``_' '`' !'``' QuotedRefSource ('`' !'``') '_' {
                            if match, found := p.findReference(p.mkString(a.contents.str)); found {
                                yy = p.mkLink(p.mkString(yytext), match.url, match.title)
                                a = nil
@@ -9425,7 +9454,7 @@ func (p *yyParser) Init() {
 			if !matchChar('_') {
 				goto ko
 			}
-			do(81)
+			do(84)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -9433,7 +9462,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 171 ExplicitLink <- (Label '(' Sp Source Spnl Title Sp ')' { 
+		/* 172 ExplicitLink <- (Label '(' Sp Source Spnl Title Sp ')' { 
                   yy = p.mkLink(l.children, s.contents.str, t.contents.str)
                   s = nil
                   t = nil
@@ -9445,7 +9474,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleLabel]() {
 				goto ko
 			}
-			doarg(yySet, -3)
+			doarg(yySet, -1)
 			if !matchChar('(') {
 				goto ko
 			}
@@ -9455,21 +9484,21 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleSource]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -2)
 			if !p.rules[ruleSpnl]() {
 				goto ko
 			}
 			if !p.rules[ruleTitle]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -3)
 			if !p.rules[ruleSp]() {
 				goto ko
 			}
 			if !matchChar(')') {
 				goto ko
 			}
-			do(82)
+			do(85)
 			doarg(yyPop, 3)
 			match = true
 			return
@@ -9477,7 +9506,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 172 LinkSource <- (!'`' !Nonspacechar)+* */
+		/* 173 LinkSource <- (!'`' !Nonspacechar)+* */
 		func() (match bool) {
 		loop:
 			{
@@ -9512,7 +9541,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 173 Source <- (< SourceContents > { yy = p.mkString(yytext) }) */
+		/* 174 Source <- (< SourceContents > { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			position0 := position
 			begin = position
@@ -9520,14 +9549,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			end = position
-			do(83)
+			do(86)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 174 SourceContents <- ((!'(' !')' !'>' Nonspacechar)+ / ('(' SourceContents ')'))* */
+		/* 175 SourceContents <- ((!'(' !')' !'>' Nonspacechar)+ / ('(' SourceContents ')'))* */
 		func() (match bool) {
 		loop:
 			{
@@ -9576,7 +9605,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 175 Title <- ((TitleSingle / TitleDouble / (< '' >)) { yy = p.mkString(yytext) }) */
+		/* 176 Title <- ((TitleSingle / TitleDouble / (< '' >)) { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			if !p.rules[ruleTitleSingle]() {
 				goto nextAlt
@@ -9591,11 +9620,11 @@ func (p *yyParser) Init() {
 			begin = position
 			end = position
 		ok:
-			do(84)
+			do(87)
 			match = true
 			return
 		},
-		/* 176 TitleSingle <- ('\'' < (!('\'' Sp ((&[)] ')') | (&[\n\r] Newline))) .)* > '\'') */
+		/* 177 TitleSingle <- ('\'' < (!('\'' Sp ((&[)] ')') | (&[\n\r] Newline))) .)* > '\'') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('\'') {
@@ -9649,7 +9678,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 177 TitleDouble <- ('"' < (!('"' Sp ((&[)] ')') | (&[\n\r] Newline))) .)* > '"') */
+		/* 178 TitleDouble <- ('"' < (!('"' Sp ((&[)] ')') | (&[\n\r] Newline))) .)* > '"') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('"') {
@@ -9703,7 +9732,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 178 AutoLink <- ((&[<] AutoLinkEmail) | (&[A-Za-z] AutoLinkUrl)) */
+		/* 179 AutoLink <- ((&[<] AutoLinkEmail) | (&[`] EmbeddedLink) | (&[A-Za-z] AutoLinkUrl)) */
 		func() (match bool) {
 			{
 				if position == len(p.Buffer) {
@@ -9712,6 +9741,10 @@ func (p *yyParser) Init() {
 				switch p.Buffer[position] {
 				case '<':
 					if !p.rules[ruleAutoLinkEmail]() {
+						return
+					}
+				case '`':
+					if !p.rules[ruleEmbeddedLink]() {
 						return
 					}
 				default:
@@ -9723,7 +9756,83 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 179 AutoLinkUrl <- (< [A-Za-z]+ '://' (!Newline !'>' .)+ > { yy = p.mkLink(p.mkString(yytext), yytext, "") }) */
+		/* 180 EmbeddedLink <- ('`' Source Sp '<' < [A-Za-z]+ '://' (!Newline !'>' .)+ > '>' '`_' {
+					yy = p.mkLink(p.mkString(l.contents.str), yytext, "")
+			   }) */
+		func() (match bool) {
+			position0, thunkPosition0 := position, thunkPosition
+			doarg(yyPush, 1)
+			if !matchChar('`') {
+				goto ko
+			}
+			if !p.rules[ruleSource]() {
+				goto ko
+			}
+			doarg(yySet, -1)
+			if !p.rules[ruleSp]() {
+				goto ko
+			}
+			if !matchChar('<') {
+				goto ko
+			}
+			begin = position
+			if !matchClass(2) {
+				goto ko
+			}
+		loop:
+			if !matchClass(2) {
+				goto out
+			}
+			goto loop
+		out:
+			if !matchString("://") {
+				goto ko
+			}
+			if !p.rules[ruleNewline]() {
+				goto ok
+			}
+			goto ko
+		ok:
+			if peekChar('>') {
+				goto ko
+			}
+			if !matchDot() {
+				goto ko
+			}
+		loop3:
+			{
+				position1 := position
+				if !p.rules[ruleNewline]() {
+					goto ok6
+				}
+				goto out4
+			ok6:
+				if peekChar('>') {
+					goto out4
+				}
+				if !matchDot() {
+					goto out4
+				}
+				goto loop3
+			out4:
+				position = position1
+			}
+			end = position
+			if !matchChar('>') {
+				goto ko
+			}
+			if !matchString("`_") {
+				goto ko
+			}
+			do(88)
+			doarg(yyPop, 1)
+			match = true
+			return
+		ko:
+			position, thunkPosition = position0, thunkPosition0
+			return
+		},
+		/* 181 AutoLinkUrl <- (< [A-Za-z]+ '://' (!Newline !'>' .)+ > { yy = p.mkLink(p.mkString(yytext), yytext, "") }) */
 		func() (match bool) {
 			position0 := position
 			begin = position
@@ -9769,14 +9878,14 @@ func (p *yyParser) Init() {
 				position = position1
 			}
 			end = position
-			do(85)
+			do(89)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 180 AutoLinkEmail <- ('<' 'mailto:'? < [-A-Za-z0-9+_./!%~$]+ '@' (!Newline !'>' .)+ > '>' {
+		/* 182 AutoLinkEmail <- ('<' 'mailto:'? < [-A-Za-z0-9+_./!%~$]+ '@' (!Newline !'>' .)+ > '>' {
                     yy = p.mkLink(p.mkString(yytext), "mailto:"+yytext, "")
                 }) */
 		func() (match bool) {
@@ -9834,14 +9943,14 @@ func (p *yyParser) Init() {
 			if !matchChar('>') {
 				goto ko
 			}
-			do(86)
+			do(90)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 181 Reference <- (QuotedReference / UnquotedReference) */
+		/* 183 Reference <- (QuotedReference / UnquotedReference) */
 		func() (match bool) {
 			if !p.rules[ruleQuotedReference]() {
 				goto nextAlt
@@ -9855,7 +9964,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 182 QuotedReference <- (NonindentSpace '.. _`' !'``' QuotedRefSource !'``:' '`: ' RefSrc BlankLine {
+		/* 184 QuotedReference <- (NonindentSpace '.. _`' !'``' QuotedRefSource !'``:' '`: ' RefSrc BlankLine {
                 yy = p.mkLink(p.mkString(c.contents.str), s.contents.str, "")
                 s = nil
                 c = nil
@@ -9894,7 +10003,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleBlankLine]() {
 				goto ko
 			}
-			do(87)
+			do(91)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -9902,7 +10011,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 183 UnquotedReference <- (NonindentSpace '.. _' RefSource ': ' RefSrc BlankLine {
+		/* 185 UnquotedReference <- (NonindentSpace '.. _' RefSource ': ' RefSrc BlankLine {
                 yy = p.mkLink(p.mkString(c.contents.str), s.contents.str, "")
                 s = nil
                 c = nil
@@ -9931,7 +10040,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleBlankLine]() {
 				goto ko
 			}
-			do(88)
+			do(92)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -9939,7 +10048,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 184 UrlReference <- ((NonindentSpace / Sp) ':target:' Sp RefSrc BlankLine {
+		/* 186 UrlReference <- ((NonindentSpace / Sp) ':target:' Sp RefSrc BlankLine {
                     yy = p.mkLink(p.mkString(yytext), yytext, "")
                     s = nil
                     yy.key = REFERENCE
@@ -9969,7 +10078,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleBlankLine]() {
 				goto ko
 			}
-			do(89)
+			do(93)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -9977,7 +10086,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 185 UnquotedLinkSource <- (< (!'_' !':' !'`' Nonspacechar)+* > { yy = p.mkString(yytext) }) */
+		/* 187 UnquotedLinkSource <- (< (!'_' !':' !'`' Nonspacechar)+* > { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			begin = position
 		loop:
@@ -10009,11 +10118,11 @@ func (p *yyParser) Init() {
 			goto loop
 		out:
 			end = position
-			do(90)
+			do(94)
 			match = true
 			return
 		},
-		/* 186 RefSource <- (< (!'_' !':' !'`' (' ' / Nonspacechar))+* > { yy = p.mkString(yytext) }) */
+		/* 188 RefSource <- (< (!'_' !':' !'`' (' ' / Nonspacechar))+* > { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			begin = position
 		loop:
@@ -10057,11 +10166,11 @@ func (p *yyParser) Init() {
 			goto loop
 		out:
 			end = position
-			do(91)
+			do(95)
 			match = true
 			return
 		},
-		/* 187 QuotedRefSource <- (< (!':' !'`' (' ' / Nonspacechar))+* > { yy = p.mkString(yytext) }) */
+		/* 189 QuotedRefSource <- (< (!':' !'`' (' ' / Nonspacechar))+* > { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			begin = position
 		loop:
@@ -10105,11 +10214,11 @@ func (p *yyParser) Init() {
 			goto loop
 		out:
 			end = position
-			do(92)
+			do(96)
 			match = true
 			return
 		},
-		/* 188 Label <- ('[' ((!'^' &{p.extension.Notes}) / (&. &{!p.extension.Notes})) StartList (!']' Inline { a = cons(yy, a) })* ']' {
+		/* 190 Label <- ('[' ((!'^' &{p.extension.Notes}) / (&. &{!p.extension.Notes})) StartList (!']' Inline { a = cons(yy, a) })* ']' {
 			yy = p.mkList(LIST, a)
 		}) */
 		func() (match bool) {
@@ -10146,7 +10255,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleInline]() {
 					goto out
 				}
-				do(93)
+				do(97)
 				goto loop
 			out:
 				position = position1
@@ -10154,7 +10263,7 @@ func (p *yyParser) Init() {
 			if !matchChar(']') {
 				goto ko
 			}
-			do(94)
+			do(98)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -10162,7 +10271,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 189 RefSrc <- (< Nonspacechar+ > { yy = p.mkString(yytext)
+		/* 191 RefSrc <- (< Nonspacechar+ > { yy = p.mkString(yytext)
            yy.key = HTML }) */
 		func() (match bool) {
 			position0 := position
@@ -10177,21 +10286,21 @@ func (p *yyParser) Init() {
 			goto loop
 		out:
 			end = position
-			do(95)
+			do(99)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 190 EmptyTitle <- (< '' >) */
+		/* 192 EmptyTitle <- (< '' >) */
 		func() (match bool) {
 			begin = position
 			end = position
 			match = true
 			return
 		},
-		/* 191 References <- (StartList ((Reference { a = cons(b, a) }) / SkipBlock)* { p.references = reverse(a)
+		/* 193 References <- (StartList ((Reference { a = cons(b, a) }) / SkipBlock)* { p.references = reverse(a)
                p.state.heap.hasGlobals = true
              } commit) */
 		func() (match bool) {
@@ -10210,7 +10319,7 @@ func (p *yyParser) Init() {
 						goto nextAlt
 					}
 					doarg(yySet, -2)
-					do(96)
+					do(100)
 					goto ok
 				nextAlt:
 					position, thunkPosition = position2, thunkPosition2
@@ -10223,7 +10332,7 @@ func (p *yyParser) Init() {
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(97)
+			do(101)
 			if !(p.commit(thunkPosition0)) {
 				goto ko
 			}
@@ -10234,7 +10343,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 192 Ticks2 <- ('``' !'`') */
+		/* 194 Ticks2 <- ('``' !'`') */
 		func() (match bool) {
 			position0 := position
 			if !matchString("``") {
@@ -10249,7 +10358,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 193 Code <- (Ticks2 < ((!'`' Nonspacechar)+ / ((&[`] (!Ticks2 '`')) | (&[_] '_') | (&[\t\n\r ] (!(Sp Ticks2) ((&[\n\r] (Newline !BlankLine)) | (&[\t ] Spacechar))))))+ > Ticks2 { yy = p.mkString(yytext); yy.key = CODE }) */
+		/* 195 Code <- (Ticks2 < ((!'`' Nonspacechar)+ / ((&[`] (!Ticks2 '`')) | (&[_] '_') | (&[\t\n\r ] (!(Sp Ticks2) ((&[\n\r] (Newline !BlankLine)) | (&[\t ] Spacechar))))))+ > Ticks2 { yy = p.mkString(yytext); yy.key = CODE }) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleTicks2]() {
@@ -10411,14 +10520,14 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleTicks2]() {
 				goto ko
 			}
-			do(98)
+			do(102)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 194 RawHtml <- (< (HtmlComment / HtmlBlockScript / HtmlTag) > {   if p.extension.FilterHTML {
+		/* 196 RawHtml <- (< (HtmlComment / HtmlBlockScript / HtmlTag) > {   if p.extension.FilterHTML {
                     yy = p.mkList(LIST, nil)
                 } else {
                     yy = p.mkString(yytext)
@@ -10443,14 +10552,14 @@ func (p *yyParser) Init() {
 			}
 		ok:
 			end = position
-			do(99)
+			do(103)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 195 BlankLine <- (Sp Newline) */
+		/* 197 BlankLine <- (Sp Newline) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleSp]() {
@@ -10465,7 +10574,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 196 Quoted <- ((&[\'] ('\'' (!'\'' .)* '\'')) | (&[\"] ('"' (!'"' .)* '"'))) */
+		/* 198 Quoted <- ((&[\'] ('\'' (!'\'' .)* '\'')) | (&[\"] ('"' (!'"' .)* '"'))) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -10517,7 +10626,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 197 HtmlAttribute <- (((&[\-] '-') | (&[0-9A-Za-z] [A-Za-z0-9]))+ Spnl ('=' Spnl (Quoted / (!'>' Nonspacechar)+))? Spnl) */
+		/* 199 HtmlAttribute <- (((&[\-] '-') | (&[0-9A-Za-z] [A-Za-z0-9]))+ Spnl ('=' Spnl (Quoted / (!'>' Nonspacechar)+))? Spnl) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -10595,7 +10704,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 198 HtmlComment <- ('<!--' (!'-->' .)* '-->') */
+		/* 200 HtmlComment <- ('<!--' (!'-->' .)* '-->') */
 		func() (match bool) {
 			position0 := position
 			if !matchString("<!--") {
@@ -10625,7 +10734,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 199 HtmlTag <- ('<' Spnl '/'? [A-Za-z0-9]+ Spnl HtmlAttribute* '/'? Spnl '>') */
+		/* 201 HtmlTag <- ('<' Spnl '/'? [A-Za-z0-9]+ Spnl HtmlAttribute* '/'? Spnl '>') */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('<') {
@@ -10666,7 +10775,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 200 Eof <- !. */
+		/* 202 Eof <- !. */
 		func() (match bool) {
 			if (position < len(p.Buffer)) {
 				return
@@ -10674,7 +10783,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 201 Spacechar <- ((&[\t] '\t') | (&[ ] ' ')) */
+		/* 203 Spacechar <- ((&[\t] '\t') | (&[ ] ' ')) */
 		func() (match bool) {
 			{
 				if position == len(p.Buffer) {
@@ -10692,7 +10801,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 202 Nonspacechar <- (!Spacechar !Newline .) */
+		/* 204 Nonspacechar <- (!Spacechar !Newline .) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleSpacechar]() {
@@ -10714,7 +10823,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 203 Newline <- ((&[\r] ('\r' '\n'?)) | (&[\n] '\n')) */
+		/* 205 Newline <- ((&[\r] ('\r' '\n'?)) | (&[\n] '\n')) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -10737,7 +10846,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 204 Sp <- Spacechar* */
+		/* 206 Sp <- Spacechar* */
 		func() (match bool) {
 		loop:
 			if !p.rules[ruleSpacechar]() {
@@ -10748,7 +10857,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 205 Spnl <- (Sp (Newline Sp)?) */
+		/* 207 Spnl <- (Sp (Newline Sp)?) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleSp]() {
@@ -10773,7 +10882,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 206 SpecialChar <- ('\'' / '"' / ((&[\\] '\\') | (&[#] '#') | (&[!] '!') | (&[<] '<') | (&[)] ')') | (&[(] '(') | (&[\]] ']') | (&[\[] '[') | (&[&] '&') | (&[`] '`') | (&[_] '_') | (&[*] '*') | (&[~] '~') | (&[\"\'\-.^] ExtendedSpecialChar))) */
+		/* 208 SpecialChar <- ('\'' / '"' / ((&[\\] '\\') | (&[#] '#') | (&[!] '!') | (&[<] '<') | (&[)] ')') | (&[(] '(') | (&[\]] ']') | (&[\[] '[') | (&[&] '&') | (&[`] '`') | (&[_] '_') | (&[*] '*') | (&[~] '~') | (&[\"\'\-.^] ExtendedSpecialChar))) */
 		func() (match bool) {
 			if !matchChar('\'') {
 				goto nextAlt
@@ -10826,7 +10935,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 207 NormalChar <- (!((&[\n\r] Newline) | (&[\t ] Spacechar) | (&[!-#&-*\-.<\[-`~] SpecialChar)) .) */
+		/* 209 NormalChar <- (!((&[\n\r] Newline) | (&[\t ] Spacechar) | (&[!-#&-*\-.<\[-`~] SpecialChar)) .) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -10859,7 +10968,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 208 Alphanumeric <- ((&[\377] '\377') | (&[\376] '\376') | (&[\375] '\375') | (&[\374] '\374') | (&[\373] '\373') | (&[\372] '\372') | (&[\371] '\371') | (&[\370] '\370') | (&[\367] '\367') | (&[\366] '\366') | (&[\365] '\365') | (&[\364] '\364') | (&[\363] '\363') | (&[\362] '\362') | (&[\361] '\361') | (&[\360] '\360') | (&[\357] '\357') | (&[\356] '\356') | (&[\355] '\355') | (&[\354] '\354') | (&[\353] '\353') | (&[\352] '\352') | (&[\351] '\351') | (&[\350] '\350') | (&[\347] '\347') | (&[\346] '\346') | (&[\345] '\345') | (&[\344] '\344') | (&[\343] '\343') | (&[\342] '\342') | (&[\341] '\341') | (&[\340] '\340') | (&[\337] '\337') | (&[\336] '\336') | (&[\335] '\335') | (&[\334] '\334') | (&[\333] '\333') | (&[\332] '\332') | (&[\331] '\331') | (&[\330] '\330') | (&[\327] '\327') | (&[\326] '\326') | (&[\325] '\325') | (&[\324] '\324') | (&[\323] '\323') | (&[\322] '\322') | (&[\321] '\321') | (&[\320] '\320') | (&[\317] '\317') | (&[\316] '\316') | (&[\315] '\315') | (&[\314] '\314') | (&[\313] '\313') | (&[\312] '\312') | (&[\311] '\311') | (&[\310] '\310') | (&[\307] '\307') | (&[\306] '\306') | (&[\305] '\305') | (&[\304] '\304') | (&[\303] '\303') | (&[\302] '\302') | (&[\301] '\301') | (&[\300] '\300') | (&[\277] '\277') | (&[\276] '\276') | (&[\275] '\275') | (&[\274] '\274') | (&[\273] '\273') | (&[\272] '\272') | (&[\271] '\271') | (&[\270] '\270') | (&[\267] '\267') | (&[\266] '\266') | (&[\265] '\265') | (&[\264] '\264') | (&[\263] '\263') | (&[\262] '\262') | (&[\261] '\261') | (&[\260] '\260') | (&[\257] '\257') | (&[\256] '\256') | (&[\255] '\255') | (&[\254] '\254') | (&[\253] '\253') | (&[\252] '\252') | (&[\251] '\251') | (&[\250] '\250') | (&[\247] '\247') | (&[\246] '\246') | (&[\245] '\245') | (&[\244] '\244') | (&[\243] '\243') | (&[\242] '\242') | (&[\241] '\241') | (&[\240] '\240') | (&[\237] '\237') | (&[\236] '\236') | (&[\235] '\235') | (&[\234] '\234') | (&[\233] '\233') | (&[\232] '\232') | (&[\231] '\231') | (&[\230] '\230') | (&[\227] '\227') | (&[\226] '\226') | (&[\225] '\225') | (&[\224] '\224') | (&[\223] '\223') | (&[\222] '\222') | (&[\221] '\221') | (&[\220] '\220') | (&[\217] '\217') | (&[\216] '\216') | (&[\215] '\215') | (&[\214] '\214') | (&[\213] '\213') | (&[\212] '\212') | (&[\211] '\211') | (&[\210] '\210') | (&[\207] '\207') | (&[\206] '\206') | (&[\205] '\205') | (&[\204] '\204') | (&[\203] '\203') | (&[\202] '\202') | (&[\201] '\201') | (&[\200] '\200') | (&[0-9A-Za-z] [0-9A-Za-z])) */
+		/* 210 Alphanumeric <- ((&[\377] '\377') | (&[\376] '\376') | (&[\375] '\375') | (&[\374] '\374') | (&[\373] '\373') | (&[\372] '\372') | (&[\371] '\371') | (&[\370] '\370') | (&[\367] '\367') | (&[\366] '\366') | (&[\365] '\365') | (&[\364] '\364') | (&[\363] '\363') | (&[\362] '\362') | (&[\361] '\361') | (&[\360] '\360') | (&[\357] '\357') | (&[\356] '\356') | (&[\355] '\355') | (&[\354] '\354') | (&[\353] '\353') | (&[\352] '\352') | (&[\351] '\351') | (&[\350] '\350') | (&[\347] '\347') | (&[\346] '\346') | (&[\345] '\345') | (&[\344] '\344') | (&[\343] '\343') | (&[\342] '\342') | (&[\341] '\341') | (&[\340] '\340') | (&[\337] '\337') | (&[\336] '\336') | (&[\335] '\335') | (&[\334] '\334') | (&[\333] '\333') | (&[\332] '\332') | (&[\331] '\331') | (&[\330] '\330') | (&[\327] '\327') | (&[\326] '\326') | (&[\325] '\325') | (&[\324] '\324') | (&[\323] '\323') | (&[\322] '\322') | (&[\321] '\321') | (&[\320] '\320') | (&[\317] '\317') | (&[\316] '\316') | (&[\315] '\315') | (&[\314] '\314') | (&[\313] '\313') | (&[\312] '\312') | (&[\311] '\311') | (&[\310] '\310') | (&[\307] '\307') | (&[\306] '\306') | (&[\305] '\305') | (&[\304] '\304') | (&[\303] '\303') | (&[\302] '\302') | (&[\301] '\301') | (&[\300] '\300') | (&[\277] '\277') | (&[\276] '\276') | (&[\275] '\275') | (&[\274] '\274') | (&[\273] '\273') | (&[\272] '\272') | (&[\271] '\271') | (&[\270] '\270') | (&[\267] '\267') | (&[\266] '\266') | (&[\265] '\265') | (&[\264] '\264') | (&[\263] '\263') | (&[\262] '\262') | (&[\261] '\261') | (&[\260] '\260') | (&[\257] '\257') | (&[\256] '\256') | (&[\255] '\255') | (&[\254] '\254') | (&[\253] '\253') | (&[\252] '\252') | (&[\251] '\251') | (&[\250] '\250') | (&[\247] '\247') | (&[\246] '\246') | (&[\245] '\245') | (&[\244] '\244') | (&[\243] '\243') | (&[\242] '\242') | (&[\241] '\241') | (&[\240] '\240') | (&[\237] '\237') | (&[\236] '\236') | (&[\235] '\235') | (&[\234] '\234') | (&[\233] '\233') | (&[\232] '\232') | (&[\231] '\231') | (&[\230] '\230') | (&[\227] '\227') | (&[\226] '\226') | (&[\225] '\225') | (&[\224] '\224') | (&[\223] '\223') | (&[\222] '\222') | (&[\221] '\221') | (&[\220] '\220') | (&[\217] '\217') | (&[\216] '\216') | (&[\215] '\215') | (&[\214] '\214') | (&[\213] '\213') | (&[\212] '\212') | (&[\211] '\211') | (&[\210] '\210') | (&[\207] '\207') | (&[\206] '\206') | (&[\205] '\205') | (&[\204] '\204') | (&[\203] '\203') | (&[\202] '\202') | (&[\201] '\201') | (&[\200] '\200') | (&[0-9A-Za-z] [0-9A-Za-z])) */
 		func() (match bool) {
 			{
 				if position == len(p.Buffer) {
@@ -11131,7 +11240,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 209 AlphanumericAscii <- [A-Za-z0-9] */
+		/* 211 AlphanumericAscii <- [A-Za-z0-9] */
 		func() (match bool) {
 			if !matchClass(5) {
 				return
@@ -11139,7 +11248,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 210 Digit <- [0-9] */
+		/* 212 Digit <- [0-9] */
 		func() (match bool) {
 			if !matchClass(0) {
 				return
@@ -11147,7 +11256,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 211 HexEntity <- (< '&' '#' [Xx] [0-9a-fA-F]+ ';' >) */
+		/* 213 HexEntity <- (< '&' '#' [Xx] [0-9a-fA-F]+ ';' >) */
 		func() (match bool) {
 			position0 := position
 			begin = position
@@ -11179,7 +11288,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 212 DecEntity <- (< '&' '#' [0-9]+ > ';' >) */
+		/* 214 DecEntity <- (< '&' '#' [0-9]+ > ';' >) */
 		func() (match bool) {
 			position0 := position
 			begin = position
@@ -11209,7 +11318,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 213 CharEntity <- (< '&' [A-Za-z0-9]+ ';' >) */
+		/* 215 CharEntity <- (< '&' [A-Za-z0-9]+ ';' >) */
 		func() (match bool) {
 			position0 := position
 			begin = position
@@ -11235,7 +11344,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 214 NonindentSpace <- ('   ' / '  ' / ' ' / '') */
+		/* 216 NonindentSpace <- ('   ' / '  ' / ' ' / '') */
 		func() (match bool) {
 			if !matchString("   ") {
 				goto nextAlt
@@ -11256,7 +11365,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 215 Indent <- ((&[ ] '    ') | (&[\t] '\t')) */
+		/* 217 Indent <- ((&[ ] '    ') | (&[\t] '\t')) */
 		func() (match bool) {
 			{
 				if position == len(p.Buffer) {
@@ -11277,7 +11386,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 216 IndentedLine <- (Indent Line) */
+		/* 218 IndentedLine <- (Indent Line) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleIndent]() {
@@ -11292,7 +11401,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 217 OptionallyIndentedLine <- (Indent? Line) */
+		/* 219 OptionallyIndentedLine <- (Indent? Line) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleIndent]() {
@@ -11308,16 +11417,16 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 218 StartList <- (&. { yy = nil }) */
+		/* 220 StartList <- (&. { yy = nil }) */
 		func() (match bool) {
 			if !(position < len(p.Buffer)) {
 				return
 			}
-			do(100)
+			do(104)
 			match = true
 			return
 		},
-		/* 219 DoctestLine <- ('>>> ' RawLine { yy = p.mkString(">>> " + yytext) }) */
+		/* 221 DoctestLine <- ('>>> ' RawLine { yy = p.mkString(">>> " + yytext) }) */
 		func() (match bool) {
 			position0 := position
 			if !matchString(">>> ") {
@@ -11326,27 +11435,27 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleRawLine]() {
 				goto ko
 			}
-			do(101)
+			do(105)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 220 Line <- (RawLine { yy = p.mkString(yytext) }) */
+		/* 222 Line <- (RawLine { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleRawLine]() {
 				goto ko
 			}
-			do(102)
+			do(106)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 221 RawLine <- ((< (!'\r' !'\n' .)* Newline >) / (< .+ > !.)) */
+		/* 223 RawLine <- ((< (!'\r' !'\n' .)* Newline >) / (< .+ > !.)) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -11393,7 +11502,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 222 SkipBlock <- (HtmlBlock / ((!'#' !SetextBottom !BlankLine RawLine)+ BlankLine*) / BlankLine+ / RawLine) */
+		/* 224 SkipBlock <- (HtmlBlock / ((!'#' !SetextBottom !BlankLine RawLine)+ BlankLine*) / BlankLine+ / RawLine) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -11474,7 +11583,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 223 ExtendedSpecialChar <- ((&[^] (&{p.extension.Notes} '^')) | (&[\"\'\-.] (&{p.extension.Smart} ((&[\"] '"') | (&[\'] '\'') | (&[\-] '-') | (&[.] '.'))))) */
+		/* 225 ExtendedSpecialChar <- ((&[^] (&{p.extension.Notes} '^')) | (&[\"\'\-.] (&{p.extension.Smart} ((&[\"] '"') | (&[\'] '\'') | (&[\-] '-') | (&[.] '.'))))) */
 		func() (match bool) {
 			position0 := position
 			{
@@ -11518,7 +11627,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 224 Smart <- (&{p.extension.Smart} (SingleQuoted / ((&[\'] Apostrophe) | (&[\"] DoubleQuoted) | (&[\-] Dash) | (&[.] Ellipsis)))) */
+		/* 226 Smart <- (&{p.extension.Smart} (SingleQuoted / ((&[\'] Apostrophe) | (&[\"] DoubleQuoted) | (&[\-] Dash) | (&[.] Ellipsis)))) */
 		func() (match bool) {
 			if !(p.extension.Smart) {
 				return
@@ -11557,20 +11666,20 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 225 Apostrophe <- ('\'' { yy = p.mkElem(APOSTROPHE) }) */
+		/* 227 Apostrophe <- ('\'' { yy = p.mkElem(APOSTROPHE) }) */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('\'') {
 				goto ko
 			}
-			do(103)
+			do(107)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 226 Ellipsis <- (('...' / '. . .') { yy = p.mkElem(ELLIPSIS) }) */
+		/* 228 Ellipsis <- (('...' / '. . .') { yy = p.mkElem(ELLIPSIS) }) */
 		func() (match bool) {
 			position0 := position
 			if !matchString("...") {
@@ -11582,14 +11691,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 		ok:
-			do(104)
+			do(108)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 227 Dash <- (EmDash / EnDash) */
+		/* 229 Dash <- (EmDash / EnDash) */
 		func() (match bool) {
 			if !p.rules[ruleEmDash]() {
 				goto nextAlt
@@ -11603,7 +11712,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 228 EnDash <- ('-' &[0-9] { yy = p.mkElem(ENDASH) }) */
+		/* 230 EnDash <- ('-' &[0-9] { yy = p.mkElem(ENDASH) }) */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('-') {
@@ -11612,14 +11721,14 @@ func (p *yyParser) Init() {
 			if !peekClass(0) {
 				goto ko
 			}
-			do(105)
+			do(109)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 229 EmDash <- (('---' / '--') { yy = p.mkElem(EMDASH) }) */
+		/* 231 EmDash <- (('---' / '--') { yy = p.mkElem(EMDASH) }) */
 		func() (match bool) {
 			position0 := position
 			if !matchString("---") {
@@ -11631,14 +11740,14 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 		ok:
-			do(106)
+			do(110)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 230 SingleQuoteStart <- ('\'' !((&[\n\r] Newline) | (&[\t ] Spacechar))) */
+		/* 232 SingleQuoteStart <- ('\'' !((&[\n\r] Newline) | (&[\t ] Spacechar))) */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('\'') {
@@ -11669,7 +11778,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 231 SingleQuoteEnd <- ('\'' !Alphanumeric) */
+		/* 233 SingleQuoteEnd <- ('\'' !Alphanumeric) */
 		func() (match bool) {
 			position0 := position
 			if !matchChar('\'') {
@@ -11686,7 +11795,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 232 SingleQuoted <- (SingleQuoteStart StartList (!SingleQuoteEnd Inline { a = cons(b, a) })+ SingleQuoteEnd { yy = p.mkList(SINGLEQUOTED, a) }) */
+		/* 234 SingleQuoted <- (SingleQuoteStart StartList (!SingleQuoteEnd Inline { a = cons(b, a) })+ SingleQuoteEnd { yy = p.mkList(SINGLEQUOTED, a) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 2)
@@ -11706,7 +11815,7 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			doarg(yySet, -2)
-			do(107)
+			do(111)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -11719,7 +11828,7 @@ func (p *yyParser) Init() {
 					goto out
 				}
 				doarg(yySet, -2)
-				do(107)
+				do(111)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -11727,7 +11836,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleSingleQuoteEnd]() {
 				goto ko
 			}
-			do(108)
+			do(112)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -11735,7 +11844,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 233 DoubleQuoteStart <- '"' */
+		/* 235 DoubleQuoteStart <- '"' */
 		func() (match bool) {
 			if !matchChar('"') {
 				return
@@ -11743,7 +11852,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 234 DoubleQuoteEnd <- '"' */
+		/* 236 DoubleQuoteEnd <- '"' */
 		func() (match bool) {
 			if !matchChar('"') {
 				return
@@ -11751,7 +11860,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 235 DoubleQuoted <- ('"' StartList (!'"' Inline { a = cons(b, a) })+ '"' { yy = p.mkList(DOUBLEQUOTED, a) }) */
+		/* 237 DoubleQuoted <- ('"' StartList (!'"' Inline { a = cons(b, a) })+ '"' { yy = p.mkList(DOUBLEQUOTED, a) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 2)
@@ -11769,7 +11878,7 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			doarg(yySet, -2)
-			do(109)
+			do(113)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -11780,7 +11889,7 @@ func (p *yyParser) Init() {
 					goto out
 				}
 				doarg(yySet, -2)
-				do(109)
+				do(113)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
@@ -11788,7 +11897,7 @@ func (p *yyParser) Init() {
 			if !matchChar('"') {
 				goto ko
 			}
-			do(110)
+			do(114)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -11796,7 +11905,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 236 NoteReference <- (&{p.extension.Notes} RawNoteReference {
+		/* 238 NoteReference <- (&{p.extension.Notes} RawNoteReference {
                     p.state.heap.hasGlobals = true
                     if match, ok := p.find_note(ref.contents.str); ok {
                         yy = p.mkElem(NOTE)
@@ -11816,7 +11925,7 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			doarg(yySet, -1)
-			do(111)
+			do(115)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -11824,7 +11933,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 237 RawNoteReference <- ('[^' < (!Newline !']' .)+ > ']' { yy = p.mkString(yytext) }) */
+		/* 239 RawNoteReference <- ('[^' < (!Newline !']' .)+ > ']' { yy = p.mkString(yytext) }) */
 		func() (match bool) {
 			position0 := position
 			if !matchString("[^") {
@@ -11864,14 +11973,14 @@ func (p *yyParser) Init() {
 			if !matchChar(']') {
 				goto ko
 			}
-			do(112)
+			do(116)
 			match = true
 			return
 		ko:
 			position = position0
 			return
 		},
-		/* 238 Note <- (&{p.extension.Notes} NonindentSpace RawNoteReference ':' Sp StartList (RawNoteBlock { a = cons(yy, a) }) (&Indent RawNoteBlock { a = cons(yy, a) })* {   yy = p.mkList(NOTE, a)
+		/* 240 Note <- (&{p.extension.Notes} NonindentSpace RawNoteReference ':' Sp StartList (RawNoteBlock { a = cons(yy, a) }) (&Indent RawNoteBlock { a = cons(yy, a) })* {   yy = p.mkList(NOTE, a)
                     yy.contents.str = ref.contents.str
                 }) */
 		func() (match bool) {
@@ -11900,7 +12009,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleRawNoteBlock]() {
 				goto ko
 			}
-			do(113)
+			do(117)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -11914,12 +12023,12 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleRawNoteBlock]() {
 					goto out
 				}
-				do(114)
+				do(118)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(115)
+			do(119)
 			doarg(yyPop, 2)
 			match = true
 			return
@@ -11927,7 +12036,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 239 Footnote <- ('[#' StartList (!']' Inline { a = cons(yy, a) })+ ']_' {
+		/* 241 Footnote <- ('[#' StartList (!']' Inline { a = cons(yy, a) })+ ']_' {
 			yy = p.mkList(NOTE, a)
 			//p.state.heap.hasGlobals = true
 			yy.contents.str = ""
@@ -11948,7 +12057,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleInline]() {
 				goto ko
 			}
-			do(116)
+			do(120)
 		loop:
 			{
 				position1 := position
@@ -11958,7 +12067,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleInline]() {
 					goto out
 				}
-				do(116)
+				do(120)
 				goto loop
 			out:
 				position = position1
@@ -11966,7 +12075,7 @@ func (p *yyParser) Init() {
 			if !matchString("]_") {
 				goto ko
 			}
-			do(117)
+			do(121)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -11974,14 +12083,14 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 240 Notes <- (StartList ((Note { a = cons(b, a) }) / SkipBlock)* { p.notes = reverse(a) } commit) */
+		/* 242 Notes <- (StartList ((Note { a = cons(b, a) }) / SkipBlock)* { p.notes = reverse(a) } commit) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 2)
 			if !p.rules[ruleStartList]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
@@ -11990,8 +12099,8 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleNote]() {
 						goto nextAlt
 					}
-					doarg(yySet, -1)
-					do(118)
+					doarg(yySet, -2)
+					do(122)
 					goto ok
 				nextAlt:
 					position, thunkPosition = position2, thunkPosition2
@@ -12004,7 +12113,7 @@ func (p *yyParser) Init() {
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(119)
+			do(123)
 			if !(p.commit(thunkPosition0)) {
 				goto ko
 			}
@@ -12015,7 +12124,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 241 RawNoteBlock <- (StartList (!BlankLine OptionallyIndentedLine { a = cons(yy, a) })+ (< BlankLine* > { a = cons(p.mkString(yytext), a) }) {   yy = p.mkStringFromList(a, true)
+		/* 243 RawNoteBlock <- (StartList (!BlankLine OptionallyIndentedLine { a = cons(yy, a) })+ (< BlankLine* > { a = cons(p.mkString(yytext), a) }) {   yy = p.mkStringFromList(a, true)
                       p.state.heap.hasGlobals = true
                   yy.key = RAW
                 }) */
@@ -12034,7 +12143,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleOptionallyIndentedLine]() {
 				goto ko
 			}
-			do(120)
+			do(124)
 		loop:
 			{
 				position1 := position
@@ -12046,7 +12155,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleOptionallyIndentedLine]() {
 					goto out
 				}
-				do(120)
+				do(124)
 				goto loop
 			out:
 				position = position1
@@ -12059,8 +12168,8 @@ func (p *yyParser) Init() {
 			goto loop5
 		out6:
 			end = position
-			do(121)
-			do(122)
+			do(125)
+			do(126)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -12068,7 +12177,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 242 DefinitionList <- (&{p.extension.Dlists} StartList (Definition { a = cons(yy, a) })+ { yy = p.mkList(DEFINITIONLIST, a) }) */
+		/* 244 DefinitionList <- (&{p.extension.Dlists} StartList (Definition { a = cons(yy, a) })+ { yy = p.mkList(DEFINITIONLIST, a) }) */
 		func() (match bool) {
 			position0, thunkPosition0 := position, thunkPosition
 			doarg(yyPush, 1)
@@ -12082,19 +12191,19 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleDefinition]() {
 				goto ko
 			}
-			do(123)
+			do(127)
 		loop:
 			{
 				position1, thunkPosition1 := position, thunkPosition
 				if !p.rules[ruleDefinition]() {
 					goto out
 				}
-				do(123)
+				do(127)
 				goto loop
 			out:
 				position, thunkPosition = position1, thunkPosition1
 			}
-			do(124)
+			do(128)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -12102,7 +12211,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 243 Definition <- (&(NonindentSpace !Defmark Nonspacechar RawLine BlankLine? Defmark) StartList (DListTitle { a = cons(yy, a) })+ (DefTight / DefLoose) {
+		/* 245 Definition <- (&(NonindentSpace !Defmark Nonspacechar RawLine BlankLine? Defmark) StartList (DListTitle { a = cons(yy, a) })+ (DefTight / DefLoose) {
 				for e := yy.children; e != nil; e = e.next {
 					e.key = DEFDATA
 				}
@@ -12143,14 +12252,14 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleDListTitle]() {
 				goto ko
 			}
-			do(125)
+			do(129)
 		loop:
 			{
 				position2, thunkPosition2 := position, thunkPosition
 				if !p.rules[ruleDListTitle]() {
 					goto out
 				}
-				do(125)
+				do(129)
 				goto loop
 			out:
 				position, thunkPosition = position2, thunkPosition2
@@ -12164,8 +12273,8 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 		ok7:
-			do(126)
-			do(127)
+			do(130)
+			do(131)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -12173,7 +12282,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 244 DListTitle <- (NonindentSpace !Defmark &Nonspacechar StartList (!Endline Inline { a = cons(yy, a) })+ Sp Newline {	yy = p.mkList(LIST, a)
+		/* 246 DListTitle <- (NonindentSpace !Defmark &Nonspacechar StartList (!Endline Inline { a = cons(yy, a) })+ Sp Newline {	yy = p.mkList(LIST, a)
 				yy.key = DEFTITLE
 			}) */
 		func() (match bool) {
@@ -12206,7 +12315,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleInline]() {
 				goto ko
 			}
-			do(128)
+			do(132)
 		loop:
 			{
 				position2 := position
@@ -12218,7 +12327,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleInline]() {
 					goto out
 				}
-				do(128)
+				do(132)
 				goto loop
 			out:
 				position = position2
@@ -12229,7 +12338,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleNewline]() {
 				goto ko
 			}
-			do(129)
+			do(133)
 			doarg(yyPop, 1)
 			match = true
 			return
@@ -12237,7 +12346,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 245 DefTight <- (&Defmark ListTight) */
+		/* 247 DefTight <- (&Defmark ListTight) */
 		func() (match bool) {
 			{
 				position1 := position
@@ -12252,7 +12361,7 @@ func (p *yyParser) Init() {
 			match = true
 			return
 		},
-		/* 246 DefLoose <- (BlankLine &Defmark ListLoose) */
+		/* 248 DefLoose <- (BlankLine &Defmark ListLoose) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleBlankLine]() {
@@ -12274,7 +12383,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 247 Defmark <- (NonindentSpace ((&[~] '~') | (&[:] ':')) Spacechar+) */
+		/* 249 Defmark <- (NonindentSpace ((&[~] '~') | (&[:] ':')) Spacechar+) */
 		func() (match bool) {
 			position0 := position
 			if !p.rules[ruleNonindentSpace]() {
@@ -12308,7 +12417,7 @@ func (p *yyParser) Init() {
 			position = position0
 			return
 		},
-		/* 248 DefMarker <- (&{p.extension.Dlists} Defmark) */
+		/* 250 DefMarker <- (&{p.extension.Dlists} Defmark) */
 		func() (match bool) {
 			if !(p.extension.Dlists) {
 				return

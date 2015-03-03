@@ -205,19 +205,27 @@ DoctestBlock = a:StartList
                   $$ = p.mkCodeBlock(a, "python")
                }
 
-BlockQuote = a:BlockQuoteRaw
-             {  $$ = p.mkElem(BLOCKQUOTE)
-                $$.children = a
-             }
 
-BlockQuoteRaw =  a:StartList
-                 (( ">>>>" { a = cons($$, a) } )+
-                  ( !'>' !BlankLine Line { a = cons($$, a) } )*
-                  ( BlankLine { a = cons(p.mkString("\n"), a) } )*
-                 )+
-                 {   $$ = p.mkStringFromList(a, true)
-                     $$.key = RAW
-                 }
+BlockQuoteRaw = ":" BlankLine { fmt.Println("bqr") }
+				Newline
+                a:StartList
+                ( NonblankIndentedLine { a = cons($$, a) } )+
+                {
+					fmt.Println("bq")
+					$$ = p.mkStringFromList(a, true)
+                    $$.key = RAW
+                }
+
+BlockQuoteChunk = !"::" ":" BlankLine
+                  Newline
+                  a:StartList
+                ( BlankLine { a = cons(p.mkString("\n"), a) } )*
+                ( NonblankIndentedLine { a = cons($$, a) } )+
+                { $$ = p.mkStringFromList(a, false) }
+
+BlockQuote =     a:StartList ( BlockQuoteChunk { a = cons($$, a) } )+
+               { $$ = p.mkElem(BLOCKQUOTE)
+                 $$.children = a }
 
 NonblankIndentedLine = !BlankLine IndentedLine
 
@@ -699,7 +707,12 @@ TitleSingle = '\'' < ( !( '\'' Sp ( ')' | Newline ) ) . )* > '\''
 
 TitleDouble = '"' < ( !( '"' Sp ( ')' | Newline ) ) . )* > '"'
 
-AutoLink = AutoLinkUrl | AutoLinkEmail
+AutoLink = EmbeddedLink | AutoLinkUrl | AutoLinkEmail
+
+EmbeddedLink = '`' l:Source Sp "<" < [A-Za-z]+ "://" ( !Newline !'>' . )+ > '>' "`_"
+               {
+					$$ = p.mkLink(p.mkString(l.contents.str), yytext, "")
+			   }
 
 AutoLinkUrl =   < [A-Za-z]+ "://" ( !Newline !'>' . )+ >
                 { $$ = p.mkLink(p.mkString(yytext), yytext, "") }

@@ -10,6 +10,12 @@ hoge1
 
 `be ho ge`_ 
 
+`Python <http://www.python.org>`_
+
+https://github.com/
+
+.. contents::
+
 2
 -
 hoge2
@@ -38,6 +44,10 @@ hoge hoge
 hogehogeoh oge::
 
   hoge
+
+blockquote:
+
+    this is inyou
 
 .. code-block:: python
 
