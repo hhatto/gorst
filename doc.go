@@ -12,7 +12,7 @@ Usage example:
 	)
 
 	func main() {
-		p := rst.NewParser(&rst.Extensions{Smart: true})
+		p := rst.NewParser(nil)
 
 		w := bufio.NewWriter(os.Stdout)
 		p.ReStructuredText(os.Stdin, rst.ToHTML(w))
