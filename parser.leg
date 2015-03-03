@@ -709,7 +709,7 @@ TitleDouble = '"' < ( !( '"' Sp ( ')' | Newline ) ) . )* > '"'
 
 AutoLink = EmbeddedLink | AutoLinkUrl | AutoLinkEmail
 
-EmbeddedLink = '`' l:Source Sp "<" < [A-Za-z]+ "://" ( !Newline !'>' . )+ > '>' "`_"
+EmbeddedLink = '`' l:Source Sp "<" < [A-Za-z]+ "://" ( !Newline !'>' . )+ > '>' "`_" '_'?
                {
 					$$ = p.mkLink(p.mkString(l.contents.str), yytext, "")
 			   }

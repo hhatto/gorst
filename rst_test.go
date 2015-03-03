@@ -122,3 +122,12 @@ func TestEmbeddedURI(t *testing.T) {
 		t.Errorf("not find '<a>' string")
 	}
 }
+
+func TestEmbeddedAnonymouseURI(t *testing.T) {
+	const input = "`hoge <http://example.com>`__\n"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href=\"http://example.com\">hoge</a>") {
+		t.Errorf("not find '<a>' string")
+	}
+}

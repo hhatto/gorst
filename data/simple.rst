@@ -12,6 +12,8 @@ hoge1
 
 `Python <http://www.python.org>`_
 
+`Python <http://www.python.org>`__
+
 https://github.com/
 
 .. contents::
