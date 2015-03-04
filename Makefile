@@ -2,7 +2,7 @@ all:
 	@echo 'targets: nuke parser clean'
 
 cmd: package
-	cd cmd/markdown && go build -v
+	cd cmd/gorst && go build -v
 
 test:
 	go test -v

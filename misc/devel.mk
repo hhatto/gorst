@@ -1,4 +1,4 @@
-MD=./cmd/markdown/markdown
+RST=./cmd/gorst/gorst
 
 #
 # development utilities
@@ -26,9 +26,9 @@ benchmark: cmd m ,,pmd ,,prevmd
 # pprof
 #
 pprof: cmd m
-	$(MD) -cpuprofile /tmp/md.prof <m > /tmp/,,md.out
-	@echo go tool pprof \'--nodefraction=0.1\' $(MD) /tmp/md.prof
-	@echo go tool pprof $(MD) /tmp/md.prof
+	$(RST) -cpuprofile /tmp/md.prof <m > /tmp/,,md.out
+	@echo go tool pprof \'--nodefraction=0.1\' $(RST) /tmp/md.prof
+	@echo go tool pprof $(RST) /tmp/md.prof
 
 .PHONY:\
 	diff\
