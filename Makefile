@@ -16,6 +16,7 @@ clean:
 	rm -f *.html
 	
 parser:	parser.leg.go
+	go fmt parser.leg.go
 
 nuke:
 	rm -f parser.leg.go
