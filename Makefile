@@ -16,7 +16,6 @@ clean:
 	rm -f *.html
 	
 parser:	parser.leg.go
-	go fmt parser.leg.go
 
 nuke:
 	rm -f parser.leg.go
@@ -28,7 +27,7 @@ ifeq ($(MAKECMDGOALS),parser)
 include $(shell go list -f '{{.Dir}}' github.com/knieriem/peg)/Make.inc
 %.leg.go: %.leg $(LEG)
 	$(LEG) -verbose -switch -O all $< > $@
-
+	go fmt parser.leg.go
 endif
 
 
