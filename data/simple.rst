@@ -102,6 +102,20 @@ sss
 <module 'sys' (built-in)>
 os.path
 
+OL1
+
+2. aaa
+   bbb
+3. ccc
+4. ddd
+
+OL2
+
+#. zzz
+   yyy
+#. xxx
+#. www
+
 aa autopep8_ ac dc
 
 これは [引用]_ です。
