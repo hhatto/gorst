@@ -354,7 +354,7 @@ ListContinuationBlock = a:StartList
                         ( Indent ListBlock { a = cons($$, a) } )+
                         {  $$ = p.mkStringFromList(a, false) }
 
-Enumerator = NonindentSpace [0-9]+ '.' Spacechar+
+Enumerator = NonindentSpace ([0-9]+ | '#'+) '.' Spacechar+
 
 OrderedList = &Enumerator (ListTight | ListLoose)
               { $$.key = ORDEREDLIST }
