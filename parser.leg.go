@@ -509,10 +509,10 @@ func (p *yyParser) Init() {
 		},
 		/* 9 Image */
 		func(yytext string, _ int) {
-			a := yyval[yyp-1]
-			t := yyval[yyp-2]
-			g := yyval[yyp-3]
-			l := yyval[yyp-4]
+			l := yyval[yyp-1]
+			a := yyval[yyp-2]
+			t := yyval[yyp-3]
+			g := yyval[yyp-4]
 
 			if match, found := p.findReference(p.mkString(yytext)); found {
 				yy = p.mkLink(p.mkString(yytext), match.url, match.title)
@@ -523,43 +523,43 @@ func (p *yyParser) Init() {
 				yy = result
 			}
 
-			yyval[yyp-4] = l
-			yyval[yyp-1] = a
-			yyval[yyp-2] = t
-			yyval[yyp-3] = g
+			yyval[yyp-1] = l
+			yyval[yyp-2] = a
+			yyval[yyp-3] = t
+			yyval[yyp-4] = g
 		},
 		/* 10 Image */
 		func(yytext string, _ int) {
-			t := yyval[yyp-2]
-			g := yyval[yyp-3]
-			l := yyval[yyp-4]
-			a := yyval[yyp-1]
+			a := yyval[yyp-2]
+			t := yyval[yyp-3]
+			g := yyval[yyp-4]
+			l := yyval[yyp-1]
 
-			yy = p.mkLink(p.mkString("a"), l.contents.str, l.contents.str)
+			yy = p.mkLink(p.mkString("a"), l.contents.str, a.contents.str)
 			yy.key = IMAGE
 
-			yyval[yyp-3] = g
-			yyval[yyp-4] = l
-			yyval[yyp-1] = a
-			yyval[yyp-2] = t
+			yyval[yyp-1] = l
+			yyval[yyp-2] = a
+			yyval[yyp-3] = t
+			yyval[yyp-4] = g
 		},
 		/* 11 CodeBlock */
 		func(yytext string, _ int) {
-			a := yyval[yyp-1]
-			l := yyval[yyp-2]
+			l := yyval[yyp-1]
+			a := yyval[yyp-2]
 			a = cons(yy, a)
-			yyval[yyp-2] = l
-			yyval[yyp-1] = a
+			yyval[yyp-1] = l
+			yyval[yyp-2] = a
 		},
 		/* 12 CodeBlock */
 		func(yytext string, _ int) {
-			l := yyval[yyp-2]
-			a := yyval[yyp-1]
+			l := yyval[yyp-1]
+			a := yyval[yyp-2]
 
 			yy = p.mkCodeBlock(a, l.contents.str)
 
-			yyval[yyp-2] = l
-			yyval[yyp-1] = a
+			yyval[yyp-1] = l
+			yyval[yyp-2] = a
 		},
 		/* 13 DoctestBlock */
 		func(yytext string, _ int) {
@@ -773,8 +773,8 @@ func (p *yyParser) Init() {
 			li.contents.str += "\n\n"
 			a = cons(b, a)
 
-			yyval[yyp-1] = a
 			yyval[yyp-2] = b
+			yyval[yyp-1] = a
 		},
 		/* 45 ListLoose */
 		func(yytext string, _ int) {
@@ -918,8 +918,8 @@ func (p *yyParser) Init() {
 
 			yy = p.mkList(LIST, a)
 
-			yyval[yyp-2] = c
 			yyval[yyp-1] = a
+			yyval[yyp-2] = c
 		},
 		/* 64 Space */
 		func(yytext string, _ int) {
@@ -991,8 +991,8 @@ func (p *yyParser) Init() {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
 			a = cons(b, a)
-			yyval[yyp-2] = b
 			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 78 Emph */
 		func(yytext string, _ int) {
@@ -1012,11 +1012,11 @@ func (p *yyParser) Init() {
 		},
 		/* 80 Strong */
 		func(yytext string, _ int) {
-			a := yyval[yyp-1]
 			b := yyval[yyp-2]
+			a := yyval[yyp-1]
 			yy = p.mkList(STRONG, a)
-			yyval[yyp-2] = b
 			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 81 Strike */
 		func(yytext string, _ int) {
@@ -1066,18 +1066,18 @@ func (p *yyParser) Init() {
 		},
 		/* 85 ExplicitLink */
 		func(yytext string, _ int) {
-			l := yyval[yyp-1]
-			s := yyval[yyp-2]
-			t := yyval[yyp-3]
+			t := yyval[yyp-1]
+			l := yyval[yyp-2]
+			s := yyval[yyp-3]
 
 			yy = p.mkLink(l.children, s.contents.str, t.contents.str)
 			s = nil
 			t = nil
 			l = nil
 
-			yyval[yyp-1] = l
-			yyval[yyp-2] = s
-			yyval[yyp-3] = t
+			yyval[yyp-2] = l
+			yyval[yyp-3] = s
+			yyval[yyp-1] = t
 		},
 		/* 86 Source */
 		func(yytext string, _ int) {
@@ -1089,13 +1089,13 @@ func (p *yyParser) Init() {
 		},
 		/* 88 EmbeddedLink */
 		func(yytext string, _ int) {
-			a := yyval[yyp-1]
-			l := yyval[yyp-2]
+			l := yyval[yyp-1]
+			a := yyval[yyp-2]
 
 			yy = p.mkLink(p.mkString(l.contents.str), yytext, "")
 
-			yyval[yyp-1] = a
-			yyval[yyp-2] = l
+			yyval[yyp-2] = a
+			yyval[yyp-1] = l
 		},
 		/* 89 AutoLinkUrl */
 		func(yytext string, _ int) {
@@ -1268,8 +1268,8 @@ func (p *yyParser) Init() {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
 			yy = p.mkList(DOUBLEQUOTED, a)
-			yyval[yyp-2] = b
 			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 116 NoteReference */
 		func(yytext string, _ int) {
@@ -1313,8 +1313,8 @@ func (p *yyParser) Init() {
 			yy = p.mkList(NOTE, a)
 			yy.contents.str = ref.contents.str
 
-			yyval[yyp-1] = ref
 			yyval[yyp-2] = a
+			yyval[yyp-1] = ref
 		},
 		/* 121 Footnote */
 		func(yytext string, _ int) {
@@ -1938,7 +1938,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 8 Image <- (NonindentSpace '.. image:: ' Source BlankLine ((Sp ':alt:' Sp Source BlankLine) / (Sp ':target:' Sp Source {
+		/* 8 Image <- (NonindentSpace '.. image:: ' Source BlankLine ((Sp ':alt:' Sp RefSource BlankLine) / (Sp ':target:' Sp Source {
 		     if match, found := p.findReference(p.mkString(yytext)); found {
 		         yy = p.mkLink(p.mkString(yytext), match.url, match.title)
 		         t = nil
@@ -1948,7 +1948,7 @@ func (p *yyParser) Init() {
 		         yy = result
 		     }
 		   } BlankLine) / (Sp ':align:' Sp Source BlankLine))* {
-		     yy = p.mkLink(p.mkString("a"), l.contents.str, l.contents.str)
+		     yy = p.mkLink(p.mkString("a"), l.contents.str, a.contents.str)
 		     yy.key = IMAGE
 		 }) */
 		func() (match bool) {
@@ -1963,7 +1963,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleSource]() {
 				goto ko
 			}
-			doarg(yySet, -4)
+			doarg(yySet, -1)
 			if !p.rules[ruleBlankLine]() {
 				goto ko
 			}
@@ -1981,10 +1981,10 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleSp]() {
 						goto nextAlt
 					}
-					if !p.rules[ruleSource]() {
+					if !p.rules[ruleRefSource]() {
 						goto nextAlt
 					}
-					doarg(yySet, -1)
+					doarg(yySet, -2)
 					if !p.rules[ruleBlankLine]() {
 						goto nextAlt
 					}
@@ -2003,7 +2003,7 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleSource]() {
 						goto nextAlt5
 					}
-					doarg(yySet, -2)
+					doarg(yySet, -3)
 					do(9)
 					if !p.rules[ruleBlankLine]() {
 						goto nextAlt5
@@ -2023,7 +2023,7 @@ func (p *yyParser) Init() {
 					if !p.rules[ruleSource]() {
 						goto out
 					}
-					doarg(yySet, -3)
+					doarg(yySet, -4)
 					if !p.rules[ruleBlankLine]() {
 						goto out
 					}
@@ -2063,7 +2063,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleSource]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 			if !p.rules[ruleBlankLine]() {
 				goto ko
 			}
@@ -2073,7 +2073,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleStartList]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -2)
 			if !p.rules[ruleVerbatimChunk]() {
 				goto ko
 			}
@@ -9498,7 +9498,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleLabel]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -2)
 			if !matchChar('(') {
 				goto ko
 			}
@@ -9508,14 +9508,14 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleSource]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -3)
 			if !p.rules[ruleSpnl]() {
 				goto ko
 			}
 			if !p.rules[ruleTitle]() {
 				goto ko
 			}
-			doarg(yySet, -3)
+			doarg(yySet, -1)
 			if !p.rules[ruleSp]() {
 				goto ko
 			}
@@ -9784,14 +9784,14 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleStartList]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -2)
 			if !matchChar('`') {
 				goto ko
 			}
 			if !p.rules[ruleEmbeddedRefSource]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 			if !matchChar('<') {
 				goto ko
 			}

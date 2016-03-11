@@ -170,7 +170,7 @@ Heading =  &(RawLine SetextBottom)
 
 Image = NonindentSpace
         ".. image:: " l:Source BlankLine
-        ( ( Sp ":alt:" Sp a:Source BlankLine )
+        ( ( Sp ":alt:" Sp a:RefSource BlankLine )
         | ( Sp ":target:" Sp t:Source
           {
             if match, found := p.findReference(p.mkString(yytext)); found {
@@ -184,7 +184,7 @@ Image = NonindentSpace
           } BlankLine )
         | ( Sp ":align:" Sp g:Source BlankLine ) )*
         {
-            $$ = p.mkLink(p.mkString("a"), l.contents.str, l.contents.str)
+            $$ = p.mkLink(p.mkString("a"), l.contents.str, a.contents.str)
             $$.key = IMAGE
         }
 
