@@ -140,3 +140,60 @@ func TestEmbeddedAnonymouseURI(t *testing.T) {
 		t.Errorf("not find '<a>' string")
 	}
 }
+
+func TestImage(t *testing.T) {
+	const input = "test\n\n.. image:: http://example.com/example.png\n"
+	const input2result = "<p>test</p><img src=\"http://example.com/example.png\" alt=\"http://example.com/example.png\" />"
+	buf := execFromString(input)
+	output := strings.TrimSpace(buf.String())
+	if !strings.Contains(output, input2result) {
+		t.Errorf("invalid image tag. '%v'", output)
+	}
+}
+
+func TestImageWithAlt(t *testing.T) {
+	const input = `test
+
+.. image:: http://example.com/example.png
+   :alt: test text
+`
+	const input2result = `<p>test</p><img src="http://example.com/example.png" alt="test text" />`
+	buf := execFromString(input)
+	output := strings.TrimSpace(buf.String())
+	if !strings.Contains(output, input2result) {
+		t.Errorf("invalid image tag. '%v'", output)
+	}
+}
+
+func TestImageWithTarget(t *testing.T) {
+	t.Skip("still not support :target:")
+	const input = `test
+
+.. image:: http://example.com/example.png
+    :target: http://example.com/
+
+`
+	const input2result = `<p>test</p><a href="http://example.com"><img src="http://example.com/example.png" alt="test text" /></a>`
+	buf := execFromString(input)
+	output := strings.TrimSpace(buf.String())
+	if !strings.Contains(output, input2result) {
+		t.Errorf("invalid image tag. '%v' ... '%v", output, input2result)
+	}
+}
+
+func TestImageWithAltAndTarget(t *testing.T) {
+	t.Skip("still not support :target:")
+	const input = `test
+
+.. image:: http://example.com/example.png
+    :alt: test text
+    :target: http://example.com/
+
+`
+	const input2result = `<p>test</p><a href="http://example.com"><img src="http://example.com/example.png" alt="test text" /></a>`
+	buf := execFromString(input)
+	output := strings.TrimSpace(buf.String())
+	if !strings.Contains(output, input2result) {
+		t.Errorf("invalid image tag. '%v' ... '%v", output, input2result)
+	}
+}
