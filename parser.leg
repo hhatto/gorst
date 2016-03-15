@@ -252,7 +252,7 @@ HorizontalRule = NonindentSpace
                  Sp Newline BlankLine+
                  { $$ = p.mkElem(HRULE) }
 
-Table = GridTable | SimpleTable
+Table = GridTable | HeaderLessGridTable | SimpleTable
 
 SimpleTable = "NotImplemented" "simpleTable"
 
@@ -260,6 +260,12 @@ GridTable = a:StartList
             ( GridTableHeader { $$.key = TABLEHEAD; a = cons($$, a) } )
             ( GridTableHeaderSep { a = $$ } )
             ( GridTableBody { a = cons($$, a) } )+
+            {
+                $$ = p.mkList(TABLE, a)
+            }
+
+HeaderLessGridTable = a:StartList
+            ( GridTableSep (GridTableBody { a = cons($$, a) } )+ )
             {
                 $$ = p.mkList(TABLE, a)
             }
@@ -290,7 +296,7 @@ GridTableRow = Sp '|' Sp
 		}
 
 TableCell = a:StartList
-            ( ':' | '>' | '<' | '/' | Spacechar | EscapedChar | Alphanumeric | Sp )+
+            ( ':' | '>' | '<' | '/' | '-' | Spacechar | EscapedChar | Alphanumeric | Sp )+
 		    {
 			}
 
