@@ -171,21 +171,25 @@ Heading =  &(RawLine SetextBottom)
 Image = NonindentSpace
         ".. image:: " l:Source BlankLine
         ( ( Sp ":alt:" Sp a:RefSource BlankLine )
-        | ( Sp ":target:" Sp t:Source
-          {
-            if match, found := p.findReference(p.mkString(yytext)); found {
-                $$ = p.mkLink(p.mkString(yytext), match.url, match.title)
-                t = nil
-            } else {
-                result := p.mkElem(LIST)
-                result.children = cons(p.mkString(yytext), cons(t, p.mkString(yytext)));
-                $$ = result
-            }
-          } BlankLine )
+        | ( Sp ":target:" Sp t:Source BlankLine )
         | ( Sp ":align:" Sp g:Source BlankLine ) )*
         {
-            $$ = p.mkLink(p.mkString("a"), l.contents.str, a.contents.str)
-            $$.key = IMAGE
+            tt := p.mkElem(LIST)
+            if (a != nil && a.contents.str != "") {
+                tt = p.mkLink(p.mkString("a"), l.contents.str, a.contents.str)
+            } else {
+                tt = p.mkLink(p.mkString("a"), l.contents.str, l.contents.str)
+            }
+            tt.key = IMAGE
+
+            if (t != nil) {
+                gg := p.mkLink(p.mkString(t.contents.str), t.contents.str, "")
+                gg.children = tt
+                $$ = gg
+            } else {
+                $$ = tt
+                $$.children = nil
+            }
         }
 
 CodeBlock = NonindentSpace

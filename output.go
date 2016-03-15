@@ -199,7 +199,11 @@ func (w *htmlOut) elem(elt *element) *htmlOut {
 		if len(elt.contents.link.title) > 0 {
 			w.s(` title="`).str(elt.contents.link.title).s(`"`)
 		}
-		w.s(">").elist(elt.contents.link.label).s("</a>")
+		if elt.children != nil && elt.children.key == IMAGE {
+			w.s(">").children(elt).s("</a>")
+		} else {
+			w.s(">").elist(elt.contents.link.label).s("</a>")
+		}
 		w.obfuscate = o
 	case IMAGE:
 		w.s(`<img src="`).str(elt.contents.link.url).s(`" alt="`)
