@@ -166,14 +166,13 @@ func TestImageWithAlt(t *testing.T) {
 }
 
 func TestImageWithTarget(t *testing.T) {
-	t.Skip("still not support :target:")
 	const input = `test
 
 .. image:: http://example.com/example.png
-    :target: http://example.com/
+    :target: http://example.com
 
 `
-	const input2result = `<p>test</p><a href="http://example.com"><img src="http://example.com/example.png" alt="test text" /></a>`
+	const input2result = `<p>test</p><a href="http://example.com"><img src="http://example.com/example.png" alt="http://example.com/example.png" /></a>`
 	buf := execFromString(input)
 	output := strings.TrimSpace(buf.String())
 	if !strings.Contains(output, input2result) {
@@ -182,7 +181,6 @@ func TestImageWithTarget(t *testing.T) {
 }
 
 func TestImageWithAltAndTarget(t *testing.T) {
-	t.Skip("still not support :target:")
 	const input = `test
 
 .. image:: http://example.com/example.png
@@ -190,7 +188,7 @@ func TestImageWithAltAndTarget(t *testing.T) {
     :target: http://example.com/
 
 `
-	const input2result = `<p>test</p><a href="http://example.com"><img src="http://example.com/example.png" alt="test text" /></a>`
+	const input2result = `<p>test</p><a href="http://example.com/"><img src="http://example.com/example.png" alt="test text" /></a>`
 	buf := execFromString(input)
 	output := strings.TrimSpace(buf.String())
 	if !strings.Contains(output, input2result) {
