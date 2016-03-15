@@ -176,9 +176,9 @@ Image = NonindentSpace
         {
             tt := p.mkElem(LIST)
             if (a != nil && a.contents.str != "") {
-                tt = p.mkLink(p.mkString("a"), l.contents.str, a.contents.str)
+                tt = p.mkLink(p.mkString(l.contents.str), l.contents.str, a.contents.str)
             } else {
-                tt = p.mkLink(p.mkString("a"), l.contents.str, l.contents.str)
+                tt = p.mkLink(p.mkString(l.contents.str), l.contents.str, "")
             }
             tt.key = IMAGE
 
@@ -284,6 +284,7 @@ GridTableRow = Sp '|' Sp
 		a:StartList
 		( < TableCell > Sp '|'
 		{
+			// TODO: support inline text
 			raw := p.mkString(yytext)
 			raw.key = RAW
 			$$ = p.mkElem(TABLECELL)
