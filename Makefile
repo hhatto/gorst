@@ -20,6 +20,8 @@ parser:	parser.leg.go
 nuke:
 	rm -f parser.leg.go
 
+install-packages:
+	go get -v -u golang.org/x/tools/cmd/goimports
 
 # LEG parser rules
 #
@@ -27,6 +29,7 @@ ifeq ($(MAKECMDGOALS),parser)
 include $(shell go list -f '{{.Dir}}' github.com/knieriem/peg)/Make.inc
 %.leg.go: %.leg $(LEG)
 	$(LEG) -verbose -switch -O all $< > $@
+	goimports -w parser.leg.go
 	go fmt parser.leg.go
 endif
 
