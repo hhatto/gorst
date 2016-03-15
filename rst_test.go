@@ -195,3 +195,56 @@ func TestImageWithAltAndTarget(t *testing.T) {
 		t.Errorf("invalid image tag. '%v' ... '%v", output, input2result)
 	}
 }
+
+func TestGridTable(t *testing.T) {
+	const input = `test
+
++--------+--------+
+| hd1    | hd2    |
++========+========+
+| bd1    | bd2    |
++--------+--------+
+`
+	const input2result = `
+<table>
+
+<thead>
+<tr><td>hd1 </td>
+<td> hd2 </td></tr>
+</thead>
+
+<tbody>
+<tr><td>bd1 </td>
+<td> bd2 </td></tr>
+</tbody>
+</table>`
+	buf := execFromString(input)
+	output := strings.TrimSpace(buf.String())
+	if !strings.Contains(output, input2result) {
+		t.Errorf("invalid table tag. '%v' ... '%v", output, input2result)
+	}
+}
+
+func TestHeaderLessGridTable(t *testing.T) {
+	const input = `
++--------+--------+
+| bd1-1  | bd2-1  |
++--------+--------+
+| bd1-2  | bd2-2  |
++--------+--------+
+`
+	const input2result = `<table>
+
+<tbody>
+<tr><td>bd1-1 </td>
+<td> bd2-1 </td></tr>
+<tr><td>bd1-2 </td>
+<td> bd2-2 </td></tr>
+</tbody>
+</table>`
+	buf := execFromString(input)
+	output := strings.TrimSpace(buf.String())
+	if !strings.Contains(output, input2result) {
+		t.Errorf("invalid table tag. '%v' ... '%v", output, input2result)
+	}
+}
