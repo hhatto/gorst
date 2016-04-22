@@ -599,6 +599,7 @@ Inline  = Link
         | Footnote
         #| Citation
         | Code
+        | ApplicationDepent
         | RawHtml
         | Entity
         | EscapedChar
@@ -640,6 +641,9 @@ LineBreak = "  " NormalEndline
 
 Symbol =    < SpecialChar >
             { $$ = p.mkString(yytext) }
+
+ApplicationDepent = !"`_" !"``_" '`' !"``" a:QuotedRefSource '`' !"``" !"_"
+                    { $$ = p.mkString(yytext); }
 
 # This keeps the parser from getting bogged down on long strings of '*' or '_',
 # or strings of '*' or '_' with space on each side:
