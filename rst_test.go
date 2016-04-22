@@ -37,6 +37,16 @@ func TestExampleOfSimpleText(t *testing.T) {
 	ioutil.WriteFile("simple.html", buf.Bytes(), 0644)
 }
 
+func TestExampleOfPydebsignReadme(t *testing.T) {
+	buf := execFromFile("data/pydebsign.readme.rst")
+	ioutil.WriteFile("pydebsign.html", buf.Bytes(), 0644)
+
+	output := buf.String()
+	if !strings.Contains(output, "debsign is a command of devscripts that sign a Debian") {
+		t.Errorf("invalid convert")
+	}
+}
+
 func TestExampleOfMeowReadme(t *testing.T) {
 	buf := execFromFile("data/meow.readme.rst")
 	ioutil.WriteFile("meow.html", buf.Bytes(), 0644)
@@ -246,5 +256,14 @@ func TestHeaderLessGridTable(t *testing.T) {
 	output := strings.TrimSpace(buf.String())
 	if !strings.Contains(output, input2result) {
 		t.Errorf("invalid table tag. '%v' ... '%v", output, input2result)
+	}
+}
+
+func TestApplicationDepent(t *testing.T) {
+	const input = "hello ``code`` `world`\n"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<p>hello <code>code</code> world</p>") {
+		t.Errorf("invalid. output=[%v]", output)
 	}
 }
