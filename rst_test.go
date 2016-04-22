@@ -248,3 +248,12 @@ func TestHeaderLessGridTable(t *testing.T) {
 		t.Errorf("invalid table tag. '%v' ... '%v", output, input2result)
 	}
 }
+
+func TestApplicationDepent(t *testing.T) {
+	const input = "hello ``code`` `world`\n"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<p>hello <code>code</code> world</p>") {
+		t.Errorf("invalid. output=[%v]", output)
+	}
+}
