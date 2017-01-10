@@ -586,7 +586,7 @@ Inline  = Link
         | Strike
         | NoteReference
         | Footnote
-        #| Citation
+        | Citation
         | Code
         | RawHtml
         | Entity
@@ -750,7 +750,7 @@ UrlReference = ( NonindentSpace | Sp )
                     $$.key = REFERENCE
                 }
 
-UnquotedLinkSource  = < ( ( !'_' !':' !'`' ( Nonspacechar ) )+ )* >
+UnquotedLinkSource  = < ( ( !'_' !':' !'`' !'[' !']' ( Nonspacechar ) )+ )* >
               { $$ = p.mkString(yytext) }
 
 RefSource  = < ( ( !'_' !':' !'`' ( ' ' | Nonspacechar ) )+ )* >
@@ -910,14 +910,14 @@ Note =          &{ p.extension.Notes }
                     $$.contents.str = ref.contents.str
                 }
 
-#Citation = !"``" '`'
-#           a:StartList
-#           ( !']' Inline { a = cons($$, a) } )+
-#           !"``" '`'
-#           { $$ = p.mkList(NOTE, a)
-#             //p.state.heap.hasGlobals = true
-#             $$.contents.str = ""
-#           }
+Citation = '[' !'#'
+           a:StartList
+           ( !']' Inline { fmt.Println("aa:", a); a = cons($$, a) } )+
+		   "]_"
+           { $$ = p.mkList(NOTE, a)
+             //p.state.heap.hasGlobals = true
+             $$.contents.str = ""
+           }
 
 Footnote = "[#"
 		a:StartList
