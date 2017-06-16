@@ -210,12 +210,11 @@ DoctestBlock = a:StartList
                }
 
 
-BlockQuoteRaw = ":" BlankLine { fmt.Println("bqr") }
+BlockQuoteRaw = ":" BlankLine
 				Newline
                 a:StartList
                 ( NonblankIndentedLine { a = cons($$, a) } )+
                 {
-					fmt.Println("bq")
 					$$ = p.mkStringFromList(a, true)
                     $$.key = RAW
                 }
