@@ -789,8 +789,6 @@ RefSrc = < Nonspacechar+ >
          { $$ = p.mkString(yytext)
            $$.key = HTML }
 
-EmptyTitle = < "" >
-
 References = a:StartList
              ( b:Reference { a = cons(b, a) } | SkipBlock )*
              { p.references = reverse(a)
