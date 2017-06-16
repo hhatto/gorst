@@ -60,6 +60,7 @@ func NewParser(x *Extensions) (p *Parser) {
 	p.yy.Init()
 	p.yy.state.heap.init(1024)
 	p.preformatBuf = bytes.NewBuffer(make([]byte, 0, 32768))
+	initParser()
 	return
 }
 

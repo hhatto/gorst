@@ -83,6 +83,7 @@ const (
 	LISTITEM
 	BULLETLIST
 	ORDEREDLIST
+	H1TITLE
 	H1 /* Code assumes that H1..6 are in order. */
 	H2
 	H3
@@ -162,11 +163,11 @@ SetextBottom = ( '=' | '-' | '*' | '^' | '~' )+ Newline
 HeadingTitle =  &(SetextBottom RawLine SetextBottom)
                 SetextBottom
                 a:StartList ( !Endline Inline { a = cons($$, a) } )+ Sp Newline
-                SetextBottom { $$ = p.mkList(H1, a) }
+                SetextBottom { $$ = p.mkList(H1TITLE, a) }
 
 Heading =  &(RawLine SetextBottom)
            a:StartList ( !Endline Inline { a = cons($$, a) } )+ Sp Newline
-           SetextBottom { $$ = p.mkList(H2, a) }
+           SetextBottom { $$ = p.mkList(getHeadingElm(string(yytext[0])), a) }
 
 Image = NonindentSpace
         ".. image:: " l:Source BlankLine
@@ -1166,6 +1167,43 @@ func print_tree(w io.Writer, elt *element, indent int) {
 	}
 }
 
+var HeadingLevel int = 0
+var HeadingKeys [6]string   /* 0: H1, 5: H6 */
+func getHeadingElm(label string) int {
+    retLevel := -1
+    for level, val := range HeadingKeys {
+        if label == val {
+            retLevel = level
+            break
+        }
+    }
+    if retLevel == -1 {
+        HeadingKeys[HeadingLevel] = label
+        retLevel = HeadingLevel
+        HeadingLevel += 1
+    }
+    switch retLevel {
+    case 0:
+        return H1
+    case 1:
+        return H2
+    case 2:
+        return H3
+    case 3:
+        return H4
+    case 4:
+        return H5
+    case 5:
+        return H6
+    }
+    panic("not support heading level")
+}
+
+func initParser() {
+    HeadingLevel = 0
+    HeadingKeys = [6]string{}
+}
+
 var keynames = [numVAL]string{
 	LIST:           "LIST",
 	RAW:            "RAW",
@@ -1190,6 +1228,7 @@ var keynames = [numVAL]string{
 	LISTITEM:       "LISTITEM",
 	BULLETLIST:     "BULLETLIST",
 	ORDEREDLIST:    "ORDEREDLIST",
+	H1TITLE:        "H1TITLE",
 	H1:             "H1",
 	H2:             "H2",
 	H3:             "H3",

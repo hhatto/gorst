@@ -57,11 +57,28 @@ func TestExampleOfAutopep8Readme(t *testing.T) {
 	ioutil.WriteFile("autopep8.html", buf.Bytes(), 0644)
 
 	output := buf.String()
-	if !strings.Contains(output, "<h2>Requirements</h2>") {
+	if !strings.Contains(output, "<h1>Requirements</h1>") {
 		t.Errorf("contain heading in autopep8")
 	}
 	if !strings.Contains(output, "be reported by pep8.</p>") {
 		t.Errorf("para in autopep8")
+	}
+}
+
+func TestExampleOfHeadingTitle(t *testing.T) {
+	const input = `
+=============
+heading title
+=============
+
+title
+-----
+hoge1
+		`
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<h1 class=\"title\">") {
+		t.Errorf("not find '<h1 class=title>' string")
 	}
 }
 
@@ -77,6 +94,13 @@ hoge2
 		`
 	buf := execFromString(input)
 	output := buf.String()
+	if !strings.Contains(output, "<h1>") {
+		t.Errorf("not find '<h1>' string")
+	}
+	if !strings.Contains(output, "</h1>") {
+		t.Errorf("not find '</h1>' string")
+	}
+
 	if !strings.Contains(output, "<h2>") {
 		t.Errorf("not find '<h2>' string")
 	}

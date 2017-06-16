@@ -224,6 +224,8 @@ func (w *htmlOut) elem(elt *element) *htmlOut {
 	case RAW:
 		/* Shouldn't occur - these are handled by process_raw_blocks() */
 		log.Fatalf("RAW")
+	case H1TITLE:
+		w.sp().inline("<h1 class=\"title\">", elt)
 	case H1, H2, H3, H4, H5, H6:
 		h := "<h" + string('1'+elt.key-H1) + ">" /* assumes H1 ... H6 are in order */
 		w.sp().inline(h, elt)
