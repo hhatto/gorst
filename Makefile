@@ -1,8 +1,8 @@
 all:
-	@echo 'targets: nuke parser clean'
+	@echo 'targets: cmd test nuke parser clean'
 
-cmd: package
-	cd cmd/gorst && go build -v
+cmd:
+	go build -v -o gorst cmd/gorst/main.go
 
 test:
 	go test -v
@@ -13,7 +13,7 @@ package: parser.leg.go
 clean:
 	go clean . ./...
 	rm -rf ,,prevmd ,,pmd
-	rm -f *.html
+	rm -f *.html gorst
 	
 parser:	parser.leg.go
 
@@ -40,5 +40,6 @@ include misc/devel.mk
 	all\
 	cmd\
 	nuke\
+	test\
 	package\
 	parser\
