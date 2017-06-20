@@ -176,11 +176,11 @@ Image = NonindentSpace
         | ( Sp ":align:" Sp g:Source BlankLine ) )*
         {
             tt := p.mkElem(LIST)
+            title := ""
             if (a != nil && a.contents.str != "") {
-                tt = p.mkLink(p.mkString(l.contents.str), l.contents.str, a.contents.str)
-            } else {
-                tt = p.mkLink(p.mkString(l.contents.str), l.contents.str, "")
+                title = a.contents.str
             }
+            tt = p.mkLink(p.mkString(l.contents.str), l.contents.str, title)
             tt.key = IMAGE
 
             if (t != nil) {
