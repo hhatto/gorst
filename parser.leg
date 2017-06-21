@@ -191,6 +191,10 @@ Image = NonindentSpace
                 $$ = tt
                 $$.children = nil
             }
+            a = nil
+            t = nil
+            g = nil
+            l = nil
         }
 
 CodeBlock = NonindentSpace
@@ -200,6 +204,7 @@ CodeBlock = NonindentSpace
             ( VerbatimChunk { a = cons($$, a) } )+
             {
                 $$ = p.mkCodeBlock(a, l.contents.str)
+                l = nil
             }
 
 DoctestBlock = a:StartList
@@ -212,7 +217,7 @@ DoctestBlock = a:StartList
 
 
 BlockQuoteRaw = ":" BlankLine
-				Newline
+                Newline
                 a:StartList
                 ( NonblankIndentedLine { a = cons($$, a) } )+
                 {
@@ -643,7 +648,7 @@ Symbol =    < SpecialChar >
             { $$ = p.mkString(yytext) }
 
 ApplicationDepent = !"`_" !"``_" '`' !"``" a:QuotedRefSource '`' !"``" !"_"
-                    { $$ = p.mkString(yytext); }
+                    { $$ = p.mkString(yytext); a = nil }
 
 # This keeps the parser from getting bogged down on long strings of '*' or '_',
 # or strings of '*' or '_' with space on each side:
