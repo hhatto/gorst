@@ -148,6 +148,18 @@ func TestSimpleLinkRef(t *testing.T) {
 	}
 }
 
+func TestNotLinkRef(t *testing.T) {
+	const input = "BBB_\n\nCCC_DDD"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "BBB</a>") {
+		t.Errorf("invalid content: %v", output)
+	}
+	if !strings.Contains(output, "CCC_DDD</p>") {
+		t.Errorf("invalid content: %v", output)
+	}
+}
+
 func TestEmbeddedURI(t *testing.T) {
 	const input = "`hoge <http://example.com>`_\n"
 	buf := execFromString(input)

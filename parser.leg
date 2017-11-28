@@ -681,15 +681,14 @@ Link =  ReferenceLink | ExplicitLink | AutoLink
 
 ReferenceLink = UnquotedRefLinkUnderbar | QuotedRefLinkUnderbar
 
-UnquotedRefLinkUnderbar = < a:UnquotedLinkSource > '_'
+UnquotedRefLinkUnderbar = < a:UnquotedLinkSource > '_' (Spacechar|Newline)+
                        {
                            if match, found := p.findReference(p.mkString(a.contents.str)); found {
                                $$ = p.mkLink(p.mkString(a.contents.str), match.url, match.title)
                                a = nil
                            } else {
-                               result := p.mkElem(LIST)
-                               result.children = cons(p.mkString(a.contents.str), cons(a, p.mkString(yytext)));
-                               $$ = result
+                               $$ = p.mkLink(p.mkString(a.contents.str), "", "link is not found")
+                               a = nil
                            }
                        }
 
