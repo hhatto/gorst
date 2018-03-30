@@ -145,6 +145,35 @@ func TestLinkContainsUnderbar(t *testing.T) {
 	}
 }
 
+func TestUnquotedRefLinkUnderbarWithDot(t *testing.T) {
+	const input = "this is LINK_.\n\n.. _LINK: http://this.is.link.com/\n\n"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href") {
+		t.Errorf("not find '<a>' tag: %v", output)
+	}
+	if !strings.Contains(output, ">LINK</a>") {
+		t.Errorf("invalid string: %v", output)
+	}
+}
+
+func TestUnquotedRefLinkUnderbarWithDotAndList(t *testing.T) {
+	const input = `
+#. this is LINK_.
+#. list 2
+
+.. _LINK: http://this.is.link.com/
+`
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href") {
+		t.Errorf("not find '<a>' tag: %v", output)
+	}
+	if !strings.Contains(output, ">LINK</a>") {
+		t.Errorf("invalid string: %v", output)
+	}
+}
+
 func TestSimpleLinkRef(t *testing.T) {
 	const input = "BBB_\n\n.. _BBB: http://example.com"
 	buf := execFromString(input)

@@ -681,7 +681,7 @@ Link =  ReferenceLink | ExplicitLink | AutoLink
 
 ReferenceLink = UnquotedRefLinkUnderbar | QuotedRefLinkUnderbar
 
-UnquotedRefLinkUnderbar = < a:UnquotedLinkSource > '_' (Spacechar|Newline)+
+UnquotedRefLinkUnderbar = < a:UnquotedLinkSource > '_' ('.'|'-'|';'|':'|Spacechar|Newline)+
                        {
                            if match, found := p.findReference(p.mkString(a.contents.str)); found {
                                $$ = p.mkLink(p.mkString(a.contents.str), match.url, match.title)

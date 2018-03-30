@@ -137,3 +137,11 @@ aa autopep8_ ac dc
 .. _autopep8: https://github.com/hhatto/autopep8/
 .. _`be ho ge`: https://github.com/hhatto/
 .. [引用] これは引用の中身です
+
+#. list1
+#. list2
+#. aa AUTHORS_.
+
+.. _AUTHORS: https://github.com/
+
+a
