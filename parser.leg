@@ -731,7 +731,7 @@ EmbeddedLink = a:StartList '`' l:EmbeddedRefSource "<" < [A-Za-z]+ "://" ( !Newl
 					$$ = p.mkLink(p.mkString(l.contents.str), yytext, "")
 			   }
 
-AutoLinkUrl =   < [A-Za-z]+ "://" ( !Newline !'>' . )+ >
+AutoLinkUrl =   < [A-Za-z]+ "://" ( !([.-_] Newline) !'. ' !Newline !'>' [-A-Za-z0-9_.'] . )+ >
                 { $$ = p.mkLink(p.mkString(yytext), yytext, "") }
 
 AutoLinkEmail = '<' ( "mailto:" )? < [-A-Za-z0-9+_./!%~$]+ '@' ( !Newline !'>' . )+ > '>'

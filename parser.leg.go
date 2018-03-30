@@ -536,10 +536,10 @@ func (p *yyParser) Init() {
 			g = nil
 			l = nil
 
+			yyval[yyp-4] = g
 			yyval[yyp-1] = l
 			yyval[yyp-2] = a
 			yyval[yyp-3] = t
-			yyval[yyp-4] = g
 		},
 		/* 10 CodeBlock */
 		func(yytext string, _ int) {
@@ -773,23 +773,23 @@ func (p *yyParser) Init() {
 		},
 		/* 44 ListLoose */
 		func(yytext string, _ int) {
-			b := yyval[yyp-1]
-			a := yyval[yyp-2]
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 
 			li := b.children
 			li.contents.str += "\n\n"
 			a = cons(b, a)
 
-			yyval[yyp-2] = a
-			yyval[yyp-1] = b
+			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 45 ListLoose */
 		func(yytext string, _ int) {
-			a := yyval[yyp-2]
-			b := yyval[yyp-1]
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 			yy = p.mkList(LIST, a)
-			yyval[yyp-2] = a
-			yyval[yyp-1] = b
+			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 46 ListItem */
 		func(yytext string, _ int) {
@@ -907,8 +907,8 @@ func (p *yyParser) Init() {
 			a := yyval[yyp-1]
 			c := yyval[yyp-2]
 			a = cons(yy, a)
-			yyval[yyp-2] = c
 			yyval[yyp-1] = a
+			yyval[yyp-2] = c
 		},
 		/* 62 Inlines */
 		func(yytext string, _ int) {
@@ -1005,16 +1005,16 @@ func (p *yyParser) Init() {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
 			a = cons(b, a)
-			yyval[yyp-1] = a
 			yyval[yyp-2] = b
+			yyval[yyp-1] = a
 		},
 		/* 79 Emph */
 		func(yytext string, _ int) {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
 			yy = p.mkList(EMPH, a)
-			yyval[yyp-2] = b
 			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 80 Strong */
 		func(yytext string, _ int) {
@@ -1042,8 +1042,8 @@ func (p *yyParser) Init() {
 		},
 		/* 83 Strike */
 		func(yytext string, _ int) {
-			b := yyval[yyp-2]
 			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 			yy = p.mkList(STRIKE, a)
 			yyval[yyp-1] = a
 			yyval[yyp-2] = b
@@ -1079,18 +1079,18 @@ func (p *yyParser) Init() {
 		},
 		/* 86 ExplicitLink */
 		func(yytext string, _ int) {
-			l := yyval[yyp-1]
-			s := yyval[yyp-2]
-			t := yyval[yyp-3]
+			s := yyval[yyp-1]
+			t := yyval[yyp-2]
+			l := yyval[yyp-3]
 
 			yy = p.mkLink(l.children, s.contents.str, t.contents.str)
 			s = nil
 			t = nil
 			l = nil
 
-			yyval[yyp-1] = l
-			yyval[yyp-2] = s
-			yyval[yyp-3] = t
+			yyval[yyp-3] = l
+			yyval[yyp-1] = s
+			yyval[yyp-2] = t
 		},
 		/* 87 Source */
 		func(yytext string, _ int) {
@@ -1130,8 +1130,8 @@ func (p *yyParser) Init() {
 			c = nil
 			yy.key = REFERENCE
 
-			yyval[yyp-2] = s
 			yyval[yyp-1] = c
+			yyval[yyp-2] = s
 		},
 		/* 93 UnquotedReference */
 		func(yytext string, _ int) {
@@ -1206,8 +1206,8 @@ func (p *yyParser) Init() {
 			p.references = reverse(a)
 			p.state.heap.hasGlobals = true
 
-			yyval[yyp-1] = a
 			yyval[yyp-2] = b
+			yyval[yyp-1] = a
 		},
 		/* 104 Code */
 		func(yytext string, _ int) {
@@ -1254,19 +1254,19 @@ func (p *yyParser) Init() {
 		},
 		/* 113 SingleQuoted */
 		func(yytext string, _ int) {
-			b := yyval[yyp-1]
-			a := yyval[yyp-2]
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 			a = cons(b, a)
-			yyval[yyp-2] = a
-			yyval[yyp-1] = b
+			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 114 SingleQuoted */
 		func(yytext string, _ int) {
-			a := yyval[yyp-2]
-			b := yyval[yyp-1]
+			a := yyval[yyp-1]
+			b := yyval[yyp-2]
 			yy = p.mkList(SINGLEQUOTED, a)
-			yyval[yyp-2] = a
-			yyval[yyp-1] = b
+			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 115 DoubleQuoted */
 		func(yytext string, _ int) {
@@ -1316,8 +1316,8 @@ func (p *yyParser) Init() {
 			ref := yyval[yyp-1]
 			a := yyval[yyp-2]
 			a = cons(yy, a)
-			yyval[yyp-1] = ref
 			yyval[yyp-2] = a
+			yyval[yyp-1] = ref
 		},
 		/* 121 Note */
 		func(yytext string, _ int) {
@@ -1358,8 +1358,8 @@ func (p *yyParser) Init() {
 			a := yyval[yyp-1]
 			b := yyval[yyp-2]
 			p.notes = reverse(a)
-			yyval[yyp-2] = b
 			yyval[yyp-1] = a
+			yyval[yyp-2] = b
 		},
 		/* 126 RawNoteBlock */
 		func(yytext string, _ int) {
@@ -1549,14 +1549,16 @@ func (p *yyParser) Init() {
 	}
 
 	classes := [...][32]uint8{
-		3: {0, 0, 0, 0, 50, 232, 255, 3, 254, 255, 255, 135, 254, 255, 255, 71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		5: {0, 0, 0, 0, 50, 232, 255, 3, 254, 255, 255, 135, 254, 255, 255, 71, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		4: {0, 0, 0, 0, 128, 96, 255, 3, 254, 255, 255, 135, 254, 255, 255, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		1: {0, 0, 0, 0, 10, 111, 0, 80, 0, 0, 0, 184, 1, 0, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		3: {0, 0, 0, 0, 0, 192, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		0: {0, 0, 0, 0, 0, 0, 255, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		4: {0, 0, 0, 0, 0, 0, 255, 3, 254, 255, 255, 7, 254, 255, 255, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		7: {0, 0, 0, 0, 0, 0, 255, 3, 126, 0, 0, 0, 126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		6: {0, 0, 0, 0, 0, 0, 255, 3, 254, 255, 255, 7, 254, 255, 255, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		9: {0, 0, 0, 0, 0, 0, 255, 3, 126, 0, 0, 0, 126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		2: {0, 0, 0, 0, 0, 0, 0, 0, 254, 255, 255, 7, 254, 255, 255, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		5: {0, 0, 0, 0, 0, 0, 255, 3, 254, 255, 255, 7, 254, 255, 255, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		6: {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		7: {0, 0, 0, 0, 0, 0, 255, 3, 254, 255, 255, 7, 254, 255, 255, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		8: {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}
 	matchClass := func(class uint) bool {
 		if (position < len(p.Buffer)) &&
@@ -3248,11 +3250,11 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleStartList]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 			if !p.rules[ruleListItem]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -2)
 		loop3:
 			if !p.rules[ruleBlankLine]() {
 				goto out4
@@ -3266,7 +3268,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleListItem]() {
 					goto out
 				}
-				doarg(yySet, -1)
+				doarg(yySet, -2)
 			loop5:
 				if !p.rules[ruleBlankLine]() {
 					goto out6
@@ -9650,7 +9652,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleLabel]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -3)
 			if !matchChar('(') {
 				goto ko
 			}
@@ -9660,14 +9662,14 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleSource]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 			if !p.rules[ruleSpnl]() {
 				goto ko
 			}
 			if !p.rules[ruleTitle]() {
 				goto ko
 			}
-			doarg(yySet, -3)
+			doarg(yySet, -2)
 			if !p.rules[ruleSp]() {
 				goto ko
 			}
@@ -9967,7 +9969,7 @@ func (p *yyParser) Init() {
 			position, thunkPosition = position0, thunkPosition0
 			return
 		},
-		/* 182 AutoLinkUrl <- (< [A-Za-z]+ '://' (!Newline !'>' .)+ > { yy = p.mkLink(p.mkString(yytext), yytext, "") }) */
+		/* 182 AutoLinkUrl <- (< [A-Za-z]+ '://' (!([.-_] Newline) !'. ' !Newline !'>' [-A-Za-z0-9_.'] .)+ > { yy = p.mkLink(p.mkString(yytext), yytext, "") }) */
 		func() (match bool) {
 			position0 := position
 			begin = position
@@ -9983,12 +9985,32 @@ func (p *yyParser) Init() {
 			if !matchString("://") {
 				goto ko
 			}
-			if !p.rules[ruleNewline]() {
-				goto ok
+			{
+				position1 := position
+				if !matchClass(3) {
+					goto ok
+				}
+				if !p.rules[ruleNewline]() {
+					goto ok
+				}
+				goto ko
+			ok:
+				position = position1
+			}
+			if !matchString(". ") {
+				goto ok6
 			}
 			goto ko
-		ok:
+		ok6:
+			if !p.rules[ruleNewline]() {
+				goto ok7
+			}
+			goto ko
+		ok7:
 			if peekChar('>') {
+				goto ko
+			}
+			if !matchClass(4) {
 				goto ko
 			}
 			if !matchDot() {
@@ -9997,12 +10019,32 @@ func (p *yyParser) Init() {
 		loop3:
 			{
 				position1 := position
-				if !p.rules[ruleNewline]() {
-					goto ok6
+				{
+					position3 := position
+					if !matchClass(3) {
+						goto ok8
+					}
+					if !p.rules[ruleNewline]() {
+						goto ok8
+					}
+					goto out4
+				ok8:
+					position = position3
+				}
+				if !matchString(". ") {
+					goto ok9
 				}
 				goto out4
-			ok6:
+			ok9:
+				if !p.rules[ruleNewline]() {
+					goto ok10
+				}
+				goto out4
+			ok10:
 				if peekChar('>') {
+					goto out4
+				}
+				if !matchClass(4) {
 					goto out4
 				}
 				if !matchDot() {
@@ -10033,11 +10075,11 @@ func (p *yyParser) Init() {
 			}
 		ko1:
 			begin = position
-			if !matchClass(3) {
+			if !matchClass(5) {
 				goto ko
 			}
 		loop:
-			if !matchClass(3) {
+			if !matchClass(5) {
 				goto out
 			}
 			goto loop
@@ -10823,7 +10865,7 @@ func (p *yyParser) Init() {
 				case '-':
 					position++ // matchChar
 				default:
-					if !matchClass(5) {
+					if !matchClass(7) {
 						goto ko
 					}
 				}
@@ -10837,7 +10879,7 @@ func (p *yyParser) Init() {
 				case '-':
 					position++ // matchChar
 				default:
-					if !matchClass(5) {
+					if !matchClass(7) {
 						goto out
 					}
 				}
@@ -10930,11 +10972,11 @@ func (p *yyParser) Init() {
 				goto ko
 			}
 			matchChar('/')
-			if !matchClass(5) {
+			if !matchClass(7) {
 				goto ko
 			}
 		loop:
-			if !matchClass(5) {
+			if !matchClass(7) {
 				goto out
 			}
 			goto loop
@@ -11418,7 +11460,7 @@ func (p *yyParser) Init() {
 				case '\200':
 					position++ // matchChar
 				default:
-					if !matchClass(4) {
+					if !matchClass(6) {
 						return
 					}
 				}
@@ -11428,7 +11470,7 @@ func (p *yyParser) Init() {
 		},
 		/* 212 AlphanumericAscii <- [A-Za-z0-9] */
 		func() (match bool) {
-			if !matchClass(5) {
+			if !matchClass(7) {
 				return
 			}
 			match = true
@@ -11452,14 +11494,14 @@ func (p *yyParser) Init() {
 			if !matchChar('#') {
 				goto ko
 			}
-			if !matchClass(6) {
+			if !matchClass(8) {
 				goto ko
 			}
-			if !matchClass(7) {
+			if !matchClass(9) {
 				goto ko
 			}
 		loop:
-			if !matchClass(7) {
+			if !matchClass(9) {
 				goto out
 			}
 			goto loop
@@ -11511,11 +11553,11 @@ func (p *yyParser) Init() {
 			if !matchChar('&') {
 				goto ko
 			}
-			if !matchClass(5) {
+			if !matchClass(7) {
 				goto ko
 			}
 		loop:
-			if !matchClass(5) {
+			if !matchClass(7) {
 				goto out
 			}
 			goto loop
@@ -11991,7 +12033,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleStartList]() {
 				goto ko
 			}
-			doarg(yySet, -2)
+			doarg(yySet, -1)
 			if !p.rules[ruleSingleQuoteEnd]() {
 				goto ok
 			}
@@ -12000,7 +12042,7 @@ func (p *yyParser) Init() {
 			if !p.rules[ruleInline]() {
 				goto ko
 			}
-			doarg(yySet, -1)
+			doarg(yySet, -2)
 			do(113)
 		loop:
 			{
@@ -12013,7 +12055,7 @@ func (p *yyParser) Init() {
 				if !p.rules[ruleInline]() {
 					goto out
 				}
-				doarg(yySet, -1)
+				doarg(yySet, -2)
 				do(113)
 				goto loop
 			out:

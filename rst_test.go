@@ -113,6 +113,22 @@ hoge2
 	}
 }
 
+func TestAutoLink(t *testing.T) {
+	const input = "http://example.com/."
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href=\"http://example.com/\"") {
+		t.Errorf("not find '<a>' string")
+	}
+	if !strings.Contains(output, "</a>") {
+		t.Errorf("not find '</a>' string")
+	}
+
+	if !strings.Contains(output, ">http://example.com/<") {
+		t.Errorf("paragraph error")
+	}
+}
+
 func TestLinkContainsUnderbar(t *testing.T) {
 	const input = "`test - _ -`_\n\n.. _`test - _ -`: http://example.com"
 	buf := execFromString(input)
