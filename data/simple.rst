@@ -17,7 +17,8 @@ Blank <http://www.python.org>`_
 
 `Python Site <http://www.python.org>`__
 
-https://github.com/
+https://github.com/?hoge=v.
+https://www.google.com/ 
 
 .. contents::
 
