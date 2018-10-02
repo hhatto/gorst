@@ -145,6 +145,22 @@ func TestLinkContainsUnderbar(t *testing.T) {
 	}
 }
 
+func TestLinkComplexCases(t *testing.T) {
+	const input = "testlink_ is\n\n.. _testlink: http://example.com#one"
+	buf := execFromString(input)
+	output := buf.String()
+	if !strings.Contains(output, "<a href") {
+		t.Errorf("not find '<a>' string")
+	}
+	if !strings.Contains(output, "testlink</a> is") {
+		t.Errorf("not find '</a>' string")
+	}
+
+	if !strings.Contains(output, " is") {
+		t.Errorf("paragraph error: %v", output)
+	}
+}
+
 func TestUnquotedRefLinkUnderbarWithDot(t *testing.T) {
 	const input = "this is LINK_.\n\n.. _LINK: http://this.is.link.com/\n\n"
 	buf := execFromString(input)
@@ -152,7 +168,7 @@ func TestUnquotedRefLinkUnderbarWithDot(t *testing.T) {
 	if !strings.Contains(output, "<a href") {
 		t.Errorf("not find '<a>' tag: %v", output)
 	}
-	if !strings.Contains(output, ">LINK</a>") {
+	if !strings.Contains(output, ">LINK</a>.") {
 		t.Errorf("invalid string: %v", output)
 	}
 }
