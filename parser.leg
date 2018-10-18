@@ -302,7 +302,7 @@ GridTableRow = Sp '|' Sp
 		}
 
 TableCell = a:StartList
-            ( ':' | '>' | '<' | '/' | '-' | Spacechar | EscapedChar | Alphanumeric | Sp )+
+            ( ':' | '>' | '<' | '/' | '-' | Spacechar | EscapedChar | Alphanumeric )+
 		    {
 			}
 
