@@ -759,14 +759,6 @@ UnquotedReference = NonindentSpace
                 $$.key = REFERENCE
             }
 
-UrlReference = ( NonindentSpace | Sp )
-               ":target:" Sp s:RefSrc BlankLine
-                {
-                    $$ = p.mkLink(p.mkString(yytext), yytext, "")
-                    s = nil
-                    $$.key = REFERENCE
-                }
-
 UnquotedLinkSource  = < ( ( !'_' !':' !'`' ( Nonspacechar ) )+ )* >
               { $$ = p.mkString(yytext) }
 
